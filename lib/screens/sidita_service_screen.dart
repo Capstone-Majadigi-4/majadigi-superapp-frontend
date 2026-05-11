@@ -1,0 +1,490 @@
+import 'package:flutter/material.dart';
+import 'package:majadigi_superapp_frontend/widgets/destination_detail_modal.dart';
+import 'package:majadigi_superapp_frontend/screens/bus_route_detail_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/my_itinerary_screen.dart';
+
+class SiditaServiceScreen extends StatefulWidget {
+  const SiditaServiceScreen({super.key});
+
+  @override
+  State<SiditaServiceScreen> createState() => _SiditaServiceScreenState();
+}
+
+class _SiditaServiceScreenState extends State<SiditaServiceScreen> {
+  String selectedCategory = 'Semua';
+  final List<String> categories = ['Semua', 'Alam', 'Pantai', 'Keluarga'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0065FF), // Primary Blue
+      body: Stack(
+        children: [
+          // Background Decorative Pattern
+          Positioned(
+            left: -276,
+            top: -212,
+            child: Container(
+              width: 815,
+              height: 1250,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+
+          // Main Scrollable Area
+          CustomScrollView(
+            slivers: [
+              // Header Image as Sliver
+              SliverAppBar(
+                expandedHeight: 253,
+                backgroundColor: const Color(0xFF0065FF),
+                pinned: true,
+                elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.search, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.bookmark_border, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  centerTitle: true,
+                  title: const Text(
+                    'Destinasi Wisata',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(
+                        "https://images.unsplash.com/photo-1588666309990-d68f08e3d4a6?q=80&w=1000&auto=format&fit=crop",
+                        fit: BoxFit.cover,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.5),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Content Section
+              SliverToBoxAdapter(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildItineraryBanner(),
+                        const SizedBox(height: 24),
+                        _buildCategorySelector(),
+                        const SizedBox(height: 24),
+                        _buildDestinationCard(
+                          context,
+                          title: 'Gunung Bromo',
+                          description: 'Gunung berapi aktif dengan pemandangan sunrise spektakuler dan lautan pasir yang menakjubkan.',
+                          imageUrl: 'https://images.unsplash.com/photo-1536704689578-8eff5322b70b?q=80&w=1000&auto=format&fit=crop',
+                          duration: '4-5 jam',
+                          openHours: '03:00 - 17:00 WIB',
+                          route: 'Koridor Probolinggo • Terminal Probolinggo',
+                          distance: '15 km',
+                          price: 'Rp 10.000',
+                        ),
+                        const SizedBox(height: 80), // For bottom button
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Fixed Bottom Action Button
+          Positioned(
+            left: 36,
+            right: 36,
+            bottom: 30,
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0065FF).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: () => DestinationDetailModal.show(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0065FF),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Beli E-Ticket Sekarang',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItineraryBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: ShapeDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFFEFF6FF), Color(0xFFECFEFF)],
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        shadows: const [
+          BoxShadow(
+            color: Color(0x19000000),
+            blurRadius: 6,
+            offset: Offset(0, 4),
+            spreadRadius: -1,
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFDBEAFE),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.map_outlined, color: Color(0xFF1C398E), size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Cross-Ticketing & Bus Integration',
+                style: TextStyle(
+                  color: Color(0xFF1C398E),
+                  fontSize: 14,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          RichText(
+            text: const TextSpan(
+              style: TextStyle(
+                color: Color(0xFF1447E6),
+                fontSize: 12,
+                fontFamily: 'Inter',
+                height: 1.6,
+              ),
+              children: [
+                TextSpan(text: 'Setiap destinasi sudah terintegrasi dengan '),
+                TextSpan(
+                  text: 'Transjatim',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                TextSpan(
+                  text: ' untuk rekomendasi rute bus terdekat. Beli E-Ticket langsung dengan QRIS!',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyItineraryScreen()),
+                );
+              },
+              child: const Text(
+                'Lihat Itinerary Saya →',
+                style: TextStyle(
+                  color: Color(0xFF1447E6),
+                  fontSize: 14,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategorySelector() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECECF0),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: categories.map((cat) {
+          bool isSelected = selectedCategory == cat;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => selectedCategory = cat),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          )
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  cat,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: const Color(0xFF0A0A0A),
+                    fontSize: 12,
+                    fontFamily: 'Inter',
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildDestinationCard(
+    BuildContext context, {
+    required String title,
+    required String description,
+    required String imageUrl,
+    required String duration,
+    required String openHours,
+    required String route,
+    required String distance,
+    required String price,
+  }) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x19000000),
+            blurRadius: 6,
+            offset: Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(14),
+              topRight: Radius.circular(14),
+            ),
+            child: Image.network(imageUrl, height: 180, width: double.infinity, fit: BoxFit.cover),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Inter',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: Color(0xFF4A5565),
+                    fontSize: 12,
+                    fontFamily: 'Inter',
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildTag(Icons.access_time, duration),
+                    const SizedBox(width: 8),
+                    _buildTag(Icons.calendar_today, openHours),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Yellow Route Card
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFEFCE8), Color(0xFFFFF7ED)],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFFF085)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.directions_bus, color: Color(0xFF733E0A), size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Rute Transjatim',
+                                  style: TextStyle(
+                                    color: Color(0xFF733E0A),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  route,
+                                  style: const TextStyle(color: Color(0xFFA65F00), fontSize: 11),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.near_me, color: Color(0xFFD08700), size: 12),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      distance,
+                                      style: const TextStyle(color: Color(0xFFD08700), fontSize: 11),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      price,
+                                      style: const TextStyle(
+                                        color: Color(0xFF733E0A),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const BusRouteDetailScreen()),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          side: const BorderSide(color: Color(0xFFFFDF20)),
+                          minimumSize: const Size(double.infinity, 32),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text(
+                          'Lihat Rute Bus',
+                          style: TextStyle(color: Color(0xFF894B00), fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTag(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Colors.grey[600]),
+          const SizedBox(width: 4),
+          Text(text, style: const TextStyle(fontSize: 11, color: Color(0xFF0A0A0A))),
+        ],
+      ),
+    );
+  }
+}
