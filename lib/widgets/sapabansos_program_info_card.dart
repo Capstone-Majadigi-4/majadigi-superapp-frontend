@@ -18,18 +18,17 @@ class SapabansosProgramInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.black.withOpacity(0.1),
-          width: 1.33,
+          color: Colors.black.withOpacity(0.04),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -40,33 +39,31 @@ class SapabansosProgramInfoCard extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Color(0xFF0A0A0A),
-              fontSize: 16,
+              color: Color(0xFF0F172A),
+              fontSize: 15,
               fontFamily: 'Inter',
-              fontWeight: FontWeight.w500,
-              height: 1.50,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           const Text(
             'Deskripsi:',
             style: TextStyle(
-              color: Color(0xFF4A5565),
-              fontSize: 14,
+              color: Color(0xFF64748B),
+              fontSize: 13,
               fontFamily: 'Inter',
-              fontWeight: FontWeight.w400,
-              height: 1.43,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             description,
             style: const TextStyle(
-              color: Color(0xFF6E6E6E),
-              fontSize: 14,
+              color: Color(0xFF475569),
+              fontSize: 13,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w400,
-              height: 1.43,
+              height: 1.45,
             ),
           ),
           const SizedBox(height: 20),
@@ -85,21 +82,19 @@ class SapabansosProgramInfoCard extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF4A5565),
-            fontSize: 14,
+            color: Color(0xFF64748B),
+            fontSize: 13,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w400,
-            height: 1.43,
           ),
         ),
         Text(
           value,
           style: const TextStyle(
-            color: Color(0xFF0A0A0A),
-            fontSize: 14,
+            color: Color(0xFF0F172A),
+            fontSize: 13,
             fontFamily: 'Inter',
-            fontWeight: FontWeight.w500,
-            height: 1.43,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],

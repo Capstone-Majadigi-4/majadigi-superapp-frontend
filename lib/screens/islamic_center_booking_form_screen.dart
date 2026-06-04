@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:majadigi_superapp_frontend/widgets/custom_textfield.dart';
 import 'package:majadigi_superapp_frontend/widgets/custom_button.dart';
+import 'package:majadigi_superapp_frontend/providers/islamic_center_provider.dart';
+import 'package:majadigi_superapp_frontend/providers/auth_provider.dart';
+import 'package:majadigi_superapp_frontend/models/islamic_center_model.dart';
 import 'islamic_center_payment_screen.dart';
 
 class IslamicCenterBookingFormScreen extends StatefulWidget {
-  final String roomName;
-  final String date;
+  final Fasilitas fasilitas;
+  final DateTime selectedDate;
 
   const IslamicCenterBookingFormScreen({
     super.key,
-    required this.roomName,
-    required this.date,
+    required this.fasilitas,
+    required this.selectedDate,
   });
 
   @override
@@ -27,6 +32,29 @@ class _IslamicCenterBookingFormScreenState extends State<IslamicCenterBookingFor
   final _eventNameController = TextEditingController();
   final _participantsController = TextEditingController();
 
+  List<int>? _selectedFileBytes;
+  String? _selectedFileName;
+  String? _fileError;
+
+  String get _displayDate {
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    return '${widget.selectedDate.day} ${months[widget.selectedDate.month - 1]} ${widget.selectedDate.year}';
+  }
+
+  String get _formattedTotalPrice {
+    return 'Rp ${widget.fasilitas.hargaPerHari.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.user != null) {
+      _nameController.text = authProvider.user!.nama;
+      _phoneController.text = authProvider.user!.noHp;
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -35,6 +63,38 @@ class _IslamicCenterBookingFormScreenState extends State<IslamicCenterBookingFor
     _eventNameController.dispose();
     _participantsController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+        
+        if (file.size > 5 * 1024 * 1024) {
+          setState(() {
+            _fileError = 'Ukuran file maksimal 5MB';
+          });
+          return;
+        }
+
+        setState(() {
+          _selectedFileBytes = file.bytes;
+          _selectedFileName = file.name;
+          _fileError = null;
+        });
+      }
+    } catch (e) {
+      print('Error picking file: $e');
+      setState(() {
+        _fileError = 'Gagal memilih file: $e';
+      });
+    }
   }
 
   @override
@@ -141,17 +201,64 @@ class _IslamicCenterBookingFormScreenState extends State<IslamicCenterBookingFor
                               validator: (value) => (value == null || value.isEmpty) ? 'Jumlah peserta wajib diisi' : null,
                             ),
                             
-                            const SizedBox(height: 40),
-                            CustomButton(
-                              text: 'Lanjutkan Booking',
-                              onPressed: () {
-                                if (_formKey.currentState!.validate()) {
-                                  _showSuccessDialog(context);
-                                }
-                              },
-                              borderRadius: 14,
-                            ),
-                            const SizedBox(height: 40),
+                             const SizedBox(height: 24),
+                             _buildFilePickerSection(),
+                             
+                             const SizedBox(height: 40),
+                             Consumer<IslamicCenterProvider>(
+                               builder: (context, provider, child) {
+                                 if (provider.isBooking) {
+                                   return const Center(
+                                     child: CircularProgressIndicator(
+                                       color: Color(0xFF0065FF),
+                                     ),
+                                   );
+                                 }
+                                 return CustomButton(
+                                   text: 'Lanjutkan Booking',
+                                   onPressed: () async {
+                                     if (_selectedFileName == null || _selectedFileBytes == null) {
+                                       setState(() {
+                                         _fileError = 'Dokumen pendukung wajib diunggah';
+                                       });
+                                     }
+                                     if (_formKey.currentState!.validate() && _selectedFileName != null && _selectedFileBytes != null) {
+                                       final year = widget.selectedDate.year;
+                                       final month = widget.selectedDate.month.toString().padLeft(2, '0');
+                                       final day = widget.selectedDate.day.toString().padLeft(2, '0');
+                                       final apiDateStr = '$year-$month-$day';
+
+                                       final booking = await provider.bookFasilitas(
+                                         id: widget.fasilitas.id,
+                                         namaAcara: _eventNameController.text,
+                                         tanggalMulai: apiDateStr,
+                                         tanggalSelesai: apiDateStr,
+                                         estimasiPeserta: int.tryParse(_participantsController.text) ?? 0,
+                                         fileBytes: _selectedFileBytes!,
+                                         fileName: _selectedFileName!,
+                                       );
+
+                                       if (booking != null) {
+                                         if (context.mounted) {
+                                           _showSuccessDialog(context, booking);
+                                         }
+                                       } else {
+                                         if (context.mounted) {
+                                           ScaffoldMessenger.of(context).showSnackBar(
+                                             SnackBar(
+                                               content: Text(provider.errorBooking ?? 'Gagal memproses booking. Silakan coba lagi.'),
+                                               backgroundColor: Colors.red,
+                                             ),
+                                           );
+                                         }
+                                       }
+                                     }
+                                   },
+                                   borderRadius: 14,
+                                 );
+                               },
+                             ),
+                             const SizedBox(height: 40),
                           ],
                         ),
                       ),
@@ -205,12 +312,12 @@ class _IslamicCenterBookingFormScreenState extends State<IslamicCenterBookingFor
       ),
       child: Column(
         children: [
-          _buildSummaryRow(Icons.meeting_room, 'Ruangan', widget.roomName),
+          _buildSummaryRow(Icons.meeting_room, 'Ruangan', widget.fasilitas.nama),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(color: Color(0xFFBFDBFE), height: 1),
           ),
-          _buildSummaryRow(Icons.calendar_month, 'Tanggal Sewa', widget.date),
+          _buildSummaryRow(Icons.calendar_month, 'Tanggal Sewa', _displayDate),
         ],
       ),
     );
@@ -256,7 +363,7 @@ class _IslamicCenterBookingFormScreenState extends State<IslamicCenterBookingFor
     );
   }
 
-  void _showSuccessDialog(BuildContext context) {
+  void _showSuccessDialog(BuildContext context, BookingFasilitas booking) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -295,8 +402,11 @@ class _IslamicCenterBookingFormScreenState extends State<IslamicCenterBookingFor
                   context,
                   MaterialPageRoute(
                     builder: (context) => IslamicCenterPaymentScreen(
-                      roomName: widget.roomName,
-                      date: widget.date,
+                      roomName: widget.fasilitas.nama,
+                      date: _displayDate,
+                      totalAmount: _formattedTotalPrice,
+                      bookingId: booking.id,
+                      kodeBayar: booking.kodeBayar,
                     ),
                   ),
                 );
@@ -307,6 +417,145 @@ class _IslamicCenterBookingFormScreenState extends State<IslamicCenterBookingFor
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFilePickerSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Dokumen Pendukung',
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontSize: 16,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Unggah surat permohonan atau dokumen pendukung (PDF, JPG, atau PNG. Maksimal 5MB)',
+          style: TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 12,
+            fontFamily: 'Inter',
+          ),
+        ),
+        const SizedBox(height: 12),
+        InkWell(
+          onTap: _pickDocument,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _fileError != null
+                    ? Colors.red
+                    : (_selectedFileName != null ? const Color(0xFF0065FF) : const Color(0xFFCBD5E1)),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: _selectedFileName != null
+                ? Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.insert_drive_file_outlined,
+                          color: Color(0xFF0065FF),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedFileName!,
+                              style: const TextStyle(
+                                color: Color(0xFF1E293B),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _selectedFileBytes != null
+                                  ? '${(_selectedFileBytes!.length / (1024 * 1024)).toStringAsFixed(2)} MB'
+                                  : '',
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: () {
+                          setState(() {
+                            _selectedFileBytes = null;
+                            _selectedFileName = null;
+                            _fileError = null;
+                          });
+                        },
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.cloud_upload_outlined,
+                        color: Color(0xFF64748B),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _selectedFileName ?? 'Pilih File Dokumen',
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        if (_fileError != null) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              _fileError!,
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

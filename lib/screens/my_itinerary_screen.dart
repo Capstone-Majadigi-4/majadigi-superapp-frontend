@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/wisata_provider.dart';
 import 'package:majadigi_superapp_frontend/screens/ticket_qr_screen.dart';
 
-class MyItineraryScreen extends StatelessWidget {
+class MyItineraryScreen extends StatefulWidget {
   const MyItineraryScreen({super.key});
+
+  @override
+  State<MyItineraryScreen> createState() => _MyItineraryScreenState();
+}
+
+class _MyItineraryScreenState extends State<MyItineraryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<WisataProvider>().fetchTickets();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,106 +39,131 @@ class MyItineraryScreen extends StatelessWidget {
             ),
           ),
 
-          Column(
-            children: [
-              // Custom Header
-              Padding(
-                padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 20),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.arrow_back, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          Consumer<WisataProvider>(
+            builder: (context, provider, child) {
+              final tickets = provider.tickets;
+              final ticketCount = tickets.length;
+
+              return Column(
+                children: [
+                  // Custom Header
+                  Padding(
+                    padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 20),
+                    child: Row(
                       children: [
-                        const Text(
-                          'Itinerary Saya',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w700,
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.arrow_back, color: Colors.white),
                           ),
                         ),
-                        Text(
-                          '3 rencana perjalanan',
-                          style: TextStyle(
-                            color: const Color(0xFFCEFAFE),
-                            fontSize: 14,
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w400,
-                          ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Itinerary Saya',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              '$ticketCount rencana perjalanan',
+                              style: const TextStyle(
+                                color: Color(0xFFCEFAFE),
+                                fontSize: 14,
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
 
-              // Main Content Area
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF9FAFB),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
+                  // Main Content Area
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(30),
+                          topRight: Radius.circular(30),
+                        ),
+                      ),
+                      child: provider.isLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(),
+                            )
+                          : tickets.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.airplane_ticket_outlined,
+                                        size: 64,
+                                        color: Colors.grey[400],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Belum ada itinerary perjalanan.',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Silakan pesan tiket wisata terlebih dahulu.',
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.separated(
+                                  padding: const EdgeInsets.all(24),
+                                  itemCount: tickets.length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 16),
+                                  itemBuilder: (context, index) {
+                                    final ticket = tickets[index];
+                                    final isToday = ticket.status == 'Hari Ini';
+                                    return _buildItineraryCard(
+                                      context,
+                                      title: ticket.destinationTitle,
+                                      location: ticket.location,
+                                      date: ticket.date,
+                                      time: ticket.time,
+                                      guests: ticket.guests,
+                                      price: ticket.price,
+                                      status: ticket.status,
+                                      statusColor: isToday
+                                          ? const Color(0xFF00A63E)
+                                          : const Color(0xFF0065FF),
+                                    );
+                                  },
+                                ),
                     ),
                   ),
-                  child: ListView(
-                    padding: const EdgeInsets.all(24),
-                    children: [
-                      _buildItineraryCard(
-                        context,
-                        title: 'Gunung Bromo',
-                        location: 'Probolinggo',
-                        date: '6 Apr',
-                        time: '09:00',
-                        guests: '1 orang',
-                        price: 'Rp 35.000',
-                        status: 'Hari Ini',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildItineraryCard(
-                        context,
-                        title: 'Pantai Tiga Warna',
-                        location: 'Malang',
-                        date: '8 Apr',
-                        time: '10:30',
-                        guests: '2 orang',
-                        price: 'Rp 50.000',
-                        status: 'Mendatang',
-                        statusColor: const Color(0xFF0065FF),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildItineraryCard(
-                        context,
-                        title: 'Kawah Ijen',
-                        location: 'Banyuwangi',
-                        date: '12 Apr',
-                        time: '02:00',
-                        guests: '1 orang',
-                        price: 'Rp 25.000',
-                        status: 'Mendatang',
-                        statusColor: const Color(0xFF0065FF),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ],
       ),

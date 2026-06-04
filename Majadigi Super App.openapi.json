@@ -1,0 +1,4307 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Majadigi Super App",
+    "description": "# Majadigi Super App API\n\nAPI Contract resmi untuk platform layanan publik Kota Surabaya.\n\n## Services\n| Service | Prefix | Deskripsi |\n|---|---|---|\n| **Auth** | `/auth` | Autentikasi & manajemen akun |\n| **RSUD** | `/rsud` | Antrean & info rumah sakit |\n| **Islamic** | `/islamic` | Acara keislaman & peminjaman fasilitas |\n| **Bapok** | `/bapok` | Harga bahan pokok & price alert |\n| **Transjatim** | `/transjatim` | Tiket & tracking armada bus |\n\n## Autentikasi\n- **Pengguna**: Bearer Token dari `POST /auth/login` — simpan ke variable `bearerToken`\n- **Admin**: API Key via header `X-Admin-Key`",
+    "version": "1.0.0"
+  },
+  "tags": [
+    {
+      "name": "Auth / Public"
+    },
+    {
+      "name": "RSUD / Public"
+    },
+    {
+      "name": "RSUD / Admin"
+    },
+    {
+      "name": "Islamic / Public"
+    },
+    {
+      "name": "Islamic / Admin"
+    },
+    {
+      "name": "Bapok / Public"
+    },
+    {
+      "name": "Bapok / Admin"
+    },
+    {
+      "name": "Transjatim / Public"
+    },
+    {
+      "name": "Transjatim / Admin"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Daftar Akun Baru",
+        "deprecated": false,
+        "description": "Mendaftarkan akun baru menggunakan NIK sebagai identitas utama. NIK harus unik — gagal dengan 409 jika sudah terdaftar.",
+        "operationId": "auth-register",
+        "tags": [
+          "Auth / Public"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              },
+              "example": {
+                "nik": "3578010101900002",
+                "password": "password123",
+                "nama": "Budi Sintara",
+                "no_hp": "08123456789",
+                "fcm_token": "device-token-fcm-xxx"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Registrasi berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "nik": {
+                              "type": "string",
+                              "example": "357801****0002"
+                            },
+                            "nama": {
+                              "type": "string",
+                              "example": "Budi Sintara"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Registrasi berhasil",
+                  "data": {
+                    "id": "uuid-xxxx",
+                    "nik": "357801****0002",
+                    "nama": "Budi Sintara"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "Conflict — data sudah ada atau kondisi tidak terpenuhi"
+          }
+        },
+        "security": []
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login",
+        "deprecated": false,
+        "description": "Login dengan NIK dan password. Simpan `access_token` dari response ke variable `bearerToken` untuk request selanjutnya.",
+        "operationId": "auth-login",
+        "tags": [
+          "Auth / Public"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "nik": "3578010101900002",
+                "password": "password123",
+                "fcm_token": "device-token-fcm-xxx"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Login berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "Token tidak valid atau tidak disertakan"
+          }
+        },
+        "security": [],
+        "x-apidog-script": {
+          "after": "// Auto-save token ke environment setelah login berhasil\nif (pm.response.code === 200) {\n    const body = pm.response.json();\n    pm.environment.set('ACCESS_TOKEN', body.data.access_token);\n    pm.environment.set('REFRESH_TOKEN', body.data.refresh_token);\n    pm.environment.set('TOKEN_EXPIRY', Date.now() + (body.data.expires_in * 1000));\n    console.log('[Login] Token tersimpan. Expired dalam', body.data.expires_in, 'detik');\n}"
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Perbarui Token",
+        "deprecated": false,
+        "description": "Perbarui `access_token` menggunakan `refresh_token` sebelum expired.",
+        "operationId": "auth-refresh",
+        "tags": [
+          "Auth / Public"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "refresh_token"
+                ],
+                "properties": {
+                  "refresh_token": {
+                    "type": "string",
+                    "example": "eyJhbGci..."
+                  }
+                }
+              },
+              "example": {
+                "refresh_token": "eyJhbGci..."
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Token berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "access_token": {
+                              "type": "string"
+                            },
+                            "expires_in": {
+                              "type": "integer",
+                              "example": 900
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "Token tidak valid atau tidak disertakan"
+          }
+        },
+        "security": [],
+        "x-apidog-script": {
+          "after": "if (pm.response.code === 200) {\n    const body = pm.response.json();\n    pm.environment.set('ACCESS_TOKEN', body.data.access_token);\n    pm.environment.set('TOKEN_EXPIRY', Date.now() + (body.data.expires_in * 1000));\n    console.log('[Refresh] Token diperbarui.');\n}"
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Logout",
+        "deprecated": false,
+        "description": "Invalidasi token sesi aktif.",
+        "operationId": "auth-logout",
+        "tags": [
+          "Auth / Public"
+        ],
+        "parameters": [
+          {
+            "name": "X-App-Version",
+            "in": "header",
+            "description": "Versi aplikasi klien",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "example": "1.0.0"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logout berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Logout berhasil"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "Token tidak valid atau tidak disertakan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-apidog-script": {
+          "after": "if (pm.response.code === 200) {\n    pm.environment.set('ACCESS_TOKEN', '');\n    pm.environment.set('REFRESH_TOKEN', '');\n    pm.environment.set('TOKEN_EXPIRY', '');\n    console.log('[Logout] Token dihapus dari environment.');\n}"
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Data Profil Saya",
+        "deprecated": false,
+        "description": "Mengambil data profil pengguna yang sedang login.",
+        "operationId": "auth-me",
+        "tags": [
+          "Auth / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Data profil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/UserProfile"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "Token tidak valid atau tidak disertakan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/rsud/poli": {
+      "get": {
+        "summary": "Daftar Poliklinik & Jadwal Dokter",
+        "deprecated": false,
+        "description": "Semua poliklinik aktif beserta jadwal dan nama dokter yang bertugas.",
+        "operationId": "rsud-poli-list",
+        "tags": [
+          "RSUD / Public"
+        ],
+        "parameters": [
+          {
+            "name": "X-App-Version",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "example": "1.0.0"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar poliklinik",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/rsud/antrean": {
+      "post": {
+        "summary": "Ambil Nomor Antrean",
+        "deprecated": false,
+        "description": "Mengambil nomor antrean poliklinik. Memerlukan Bearer Token.",
+        "operationId": "rsud-antrean-create",
+        "tags": [
+          "RSUD / Public"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AntreanRequest"
+              },
+              "example": {
+                "poli_id": "3bb1b554-a5a1-7d08-7c12-5e1d58984de5",
+                "dokter_id": "6cab51a0-a519-f377-a089-7a67b575492c",
+                "tanggal": "2025-04-07"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Nomor antrean berhasil diambil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Antrean"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "Token tidak valid atau tidak disertakan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/rsud/antrean/{id}/status": {
+      "get": {
+        "summary": "Cek Status Antrean",
+        "deprecated": false,
+        "description": "Status terkini antrean. Bisa dipolling untuk realtime update.",
+        "operationId": "rsud-antrean-status",
+        "tags": [
+          "RSUD / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID antrean",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status antrean",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/rsud/kamar": {
+      "get": {
+        "summary": "List Ketersediaan Kamar",
+        "deprecated": false,
+        "description": "Daftar kamar rawat inap beserta kelas dan jumlah tempat tidur tersedia.",
+        "operationId": "rsud-kamar-list",
+        "tags": [
+          "RSUD / Public"
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Filter nama kamar atau kelas",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar kamar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/rsud/webhook/panggilberikutnya": {
+      "post": {
+        "summary": "Webhook — Panggil Nomor Berikutnya",
+        "deprecated": false,
+        "description": "Dipanggil sistem SIMRS saat dokter memanggil pasien berikutnya. Trigger push notification ke pasien.",
+        "operationId": "rsud-webhook-panggil",
+        "tags": [
+          "RSUD / Admin"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "poli_id"
+                ],
+                "properties": {
+                  "poli_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "be0ad3a7-a07e-4bf9-8bab-9c1cf79086ac"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/islamic/acara": {
+      "get": {
+        "summary": "List Acara Aktif",
+        "deprecated": false,
+        "description": "Daftar acara keislaman yang aktif. Filter by tanggal dan status.",
+        "operationId": "islamic-acara-list",
+        "tags": [
+          "Islamic / Public"
+        ],
+        "parameters": [
+          {
+            "name": "tanggal",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "2026-05-10",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "aktif",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "aktif",
+                "selesai",
+                "dibatalkan"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar acara",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/islamic/acara/{id}": {
+      "get": {
+        "summary": "Detail Acara",
+        "deprecated": false,
+        "description": "Detail acara termasuk sisa kuota pendaftaran.",
+        "operationId": "islamic-acara-detail",
+        "tags": [
+          "Islamic / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "ee812780-d5cd-460b-99c6-3c923a86bd77",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail acara",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": []
+      }
+    },
+    "/islamic/acara/{id}/daftar": {
+      "post": {
+        "summary": "Daftar Acara",
+        "deprecated": false,
+        "description": "Mendaftarkan diri ke acara. Gagal jika kuota penuh atau sudah terdaftar.",
+        "operationId": "islamic-acara-daftar",
+        "tags": [
+          "Islamic / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "a917017f-0e43-44cd-a7f6-182d369e5e5d",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Pendaftaran berhasil",
+            "headers": {}
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "Conflict — data sudah ada atau kondisi tidak terpenuhi"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/islamic/acara/pendaftaran/saya": {
+      "get": {
+        "summary": "Riwayat Pendaftaran Acara Saya",
+        "deprecated": false,
+        "description": "Daftar acara yang sudah didaftarkan oleh pengguna yang sedang login.",
+        "operationId": "islamic-acara-pendaftaran-saya",
+        "tags": [
+          "Islamic / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Riwayat pendaftaran",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "Token tidak valid atau tidak disertakan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/islamic/fasilitas": {
+      "get": {
+        "summary": "List Fasilitas Aktif",
+        "deprecated": false,
+        "description": "Semua fasilitas (aula, ruang rapat, dll) yang tersedia untuk dipinjam.",
+        "operationId": "islamic-fasilitas-list",
+        "tags": [
+          "Islamic / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Daftar fasilitas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/islamic/fasilitas/{id}": {
+      "get": {
+        "summary": "Detail Fasilitas",
+        "deprecated": false,
+        "description": "Detail fasilitas termasuk daftar tanggal yang sudah terbooked.",
+        "operationId": "islamic-fasilitas-detail",
+        "tags": [
+          "Islamic / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "8b608a97-1dc9-4f55-a277-1fa6688725b8",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail fasilitas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": []
+      }
+    },
+    "/islamic/fasilitas/{id}/booking": {
+      "post": {
+        "summary": "Ajukan Booking Fasilitas",
+        "deprecated": false,
+        "description": "Mengajukan permohonan peminjaman fasilitas. Status awal `menunggu_persetujuan`. Admin perlu approve.",
+        "operationId": "islamic-fasilitas-booking",
+        "tags": [
+          "Islamic / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "31780658-015f-43d3-b90b-d3d19fe07be1",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama_acara": {
+                    "type": "string",
+                    "example": "Pernikahan Budi & Ani"
+                  },
+                  "tanggal_mulai": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-06-01"
+                  },
+                  "tanggal_selesai": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-06-02"
+                  },
+                  "estimasi_peserta": {
+                    "type": "integer",
+                    "example": 200
+                  },
+                  "dokumen": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Surat permohonan / dokumen pendukung (pdf/jpg/png, maks 5MB). Disimpan ke MinIO, URL-nya tersimpan sebagai `dokumen_url`.",
+                    "example": "file:///Users/santaimany/Documents/Image/2237163-2048x1365-desktop-hd-rex-orange-county-background-photo.jpg"
+                  }
+                },
+                "required": [
+                  "nama_acara",
+                  "tanggal_mulai",
+                  "tanggal_selesai",
+                  "estimasi_peserta"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Booking berhasil diajukan",
+            "headers": {}
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "Conflict — data sudah ada atau kondisi tidak terpenuhi"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/islamic/fasilitas/booking/saya": {
+      "get": {
+        "summary": "Riwayat Booking Fasilitas Saya",
+        "deprecated": false,
+        "description": "Semua pengajuan booking fasilitas oleh pengguna yang sedang login.",
+        "operationId": "islamic-fasilitas-booking-saya",
+        "tags": [
+          "Islamic / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Riwayat booking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "Token tidak valid atau tidak disertakan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/islamic/admin/acara": {
+      "post": {
+        "summary": "Buat Acara Baru",
+        "deprecated": false,
+        "description": "Membuat acara keislaman baru. Hanya admin.",
+        "operationId": "islamic-admin-acara-create",
+        "tags": [
+          "Islamic / Admin"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "judul": {
+                    "type": "string",
+                    "example": "Kajian Pagi Berkah"
+                  },
+                  "tanggal": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-05-20"
+                  },
+                  "kuota_maksimal": {
+                    "type": "integer",
+                    "example": 100
+                  },
+                  "deskripsi": {
+                    "type": "string",
+                    "example": "Kajian berkah"
+                  },
+                  "waktu_mulai": {
+                    "type": "string",
+                    "example": "08:00"
+                  },
+                  "waktu_selesai": {
+                    "type": "string",
+                    "example": "10:00"
+                  },
+                  "lokasi": {
+                    "type": "string",
+                    "example": "Aula Utama"
+                  },
+                  "poster": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File gambar poster acara (jpg/png/webp, maks 2MB). Disimpan ke MinIO, URL-nya tersimpan sebagai `poster_url`.",
+                    "example": ""
+                  }
+                },
+                "required": [
+                  "judul",
+                  "tanggal",
+                  "kuota_maksimal",
+                  "waktu_mulai",
+                  "waktu_selesai",
+                  "lokasi"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Acara berhasil dibuat",
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": "Token tidak valid atau tidak disertakan"
+          }
+        },
+        "security": [
+          {
+            "islamicAdminKey": []
+          }
+        ]
+      }
+    },
+    "/islamic/admin/acara/{id}": {
+      "put": {
+        "summary": "Edit Acara",
+        "deprecated": false,
+        "description": "Update semua field acara (PUT — semua field wajib).",
+        "operationId": "islamic-admin-acara-update",
+        "tags": [
+          "Islamic / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "d24f5b2b-75fc-6eeb-e396-2837797a64c7",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "poster": {
+                  "contentType": "image/jpeg, image/png, image/webp"
+                }
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "judul": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "tanggal": {
+                    "type": "string",
+                    "format": "date",
+                    "example": ""
+                  },
+                  "waktu_mulai": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "waktu_selesai": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "lokasi": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "kuota_maksimal": {
+                    "type": "integer",
+                    "example": 0
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "aktif",
+                      "selesai",
+                      "dibatalkan"
+                    ],
+                    "example": ""
+                  },
+                  "poster": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Ganti poster acara (opsional). jpg/png/webp, maks 2MB.",
+                    "example": ""
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Acara berhasil diupdate",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "islamicAdminKey": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Nonaktifkan Acara",
+        "deprecated": false,
+        "description": "Soft-delete / batalkan acara.",
+        "operationId": "islamic-admin-acara-delete",
+        "tags": [
+          "Islamic / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "d24f5b2b-75fc-6eeb-e396-2837797a64c7",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acara dinonaktifkan",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "islamicAdminKey": []
+          }
+        ]
+      }
+    },
+    "/islamic/admin/fasilitas": {
+      "post": {
+        "summary": "Tambah Fasilitas Baru",
+        "deprecated": false,
+        "description": "",
+        "operationId": "islamic-admin-fasilitas-create",
+        "tags": [
+          "Islamic / Admin"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": {
+                    "type": "string",
+                    "example": "Ruang VIP"
+                  },
+                  "kapasitas": {
+                    "type": "integer",
+                    "example": 50
+                  },
+                  "harga_per_hari": {
+                    "type": "number",
+                    "example": 1500000
+                  },
+                  "deskripsi": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "foto": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Foto fasilitas (jpg/png/webp, maks 5MB). Disimpan ke MinIO, URL-nya tersimpan sebagai `foto_url`.",
+                    "example": "file:///Users/santaimany/Documents/Image/2237163-2048x1365-desktop-hd-rex-orange-county-background-photo.jpg"
+                  }
+                },
+                "required": [
+                  "nama",
+                  "kapasitas",
+                  "harga_per_hari",
+                  "deskripsi",
+                  "foto"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Fasilitas berhasil ditambahkan",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "islamicAdminKey": []
+          }
+        ]
+      }
+    },
+    "/islamic/admin/booking": {
+      "get": {
+        "summary": "List Semua Booking Masuk",
+        "deprecated": false,
+        "description": "Semua pengajuan booking fasilitas. Filter by status.",
+        "operationId": "islamic-admin-booking-list",
+        "tags": [
+          "Islamic / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "menunggu",
+                "disetujui",
+                "ditolak"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar booking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "islamicAdminKey": []
+          }
+        ]
+      }
+    },
+    "/islamic/admin/booking/{id}/approve": {
+      "patch": {
+        "summary": "Approve Booking",
+        "deprecated": false,
+        "description": "Menyetujui pengajuan booking. Trigger notifikasi ke pemohon.",
+        "operationId": "islamic-admin-booking-approve",
+        "tags": [
+          "Islamic / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking disetujui",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "islamicAdminKey": []
+          }
+        ]
+      }
+    },
+    "/islamic/admin/booking/{id}/tolak": {
+      "patch": {
+        "summary": "Tolak Booking",
+        "deprecated": false,
+        "description": "Menolak pengajuan booking. Trigger notifikasi ke pemohon.",
+        "operationId": "islamic-admin-booking-tolak",
+        "tags": [
+          "Islamic / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "7ae411b1-455c-4a72-a76a-5e76fde765f0",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": {
+                "catatan_admin": "file kurang lengkap"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking ditolak",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "islamicAdminKey": []
+          }
+        ]
+      }
+    },
+    "/bapok/komoditas": {
+      "get": {
+        "summary": "List Komoditas Aktif & Harga Hari Ini",
+        "deprecated": false,
+        "description": "Semua komoditas aktif beserta harga rata-rata, terendah, dan tertinggi hari ini.",
+        "operationId": "bapok-komoditas-list",
+        "tags": [
+          "Bapok / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Daftar komoditas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Komoditas"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapok/komoditas/{id}": {
+      "get": {
+        "summary": "Detail Komoditas",
+        "deprecated": false,
+        "description": "",
+        "operationId": "bapok-komoditas-detail",
+        "tags": [
+          "Bapok / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "30daecca-e788-46ab-8d6f-f31849b1fcf9",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail komoditas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Komoditas"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapok/ticker": {
+      "get": {
+        "summary": "Ticker Volatilitas Harga",
+        "deprecated": false,
+        "description": "3 komoditas dengan perubahan harga tertinggi hari ini vs kemarin. Cocok untuk widget dashboard.",
+        "operationId": "bapok-ticker",
+        "tags": [
+          "Bapok / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Data ticker",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapok/harga": {
+      "get": {
+        "summary": "Harga Harian per Pasar",
+        "deprecated": false,
+        "description": "Harga semua komoditas untuk tanggal tertentu. Jika `pasar_id` tidak diisi, tampil semua pasar.",
+        "operationId": "bapok-harga-harian",
+        "tags": [
+          "Bapok / Public"
+        ],
+        "parameters": [
+          {
+            "name": "tanggal",
+            "in": "query",
+            "description": "Default: hari ini",
+            "required": false,
+            "example": "2026-05-03",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "pasar_id",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Harga harian",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/HargaHarian"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapok/harga/{komoditas_id}/histori": {
+      "get": {
+        "summary": "Histori Harga 7 Hari per Komoditas",
+        "deprecated": false,
+        "description": "Histori harga 7 hari terakhir untuk satu komoditas. Cocok untuk render grafik.",
+        "operationId": "bapok-harga-histori",
+        "tags": [
+          "Bapok / Public"
+        ],
+        "parameters": [
+          {
+            "name": "komoditas_id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Histori harga",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapok/alert/saya": {
+      "get": {
+        "summary": "List Price Alert Saya",
+        "deprecated": false,
+        "description": "",
+        "operationId": "bapok-alert-list",
+        "tags": [
+          "Bapok / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Daftar alert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PriceAlert"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapok/alert": {
+      "post": {
+        "summary": "Buat Price Alert",
+        "deprecated": false,
+        "description": "Buat alert harga. `tipe`: `naik_diatas` atau `turun_dibawah`. Notifikasi dikirim saat harga melewati `nominal`.",
+        "operationId": "bapok-alert-create",
+        "tags": [
+          "Bapok / Public"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "komoditas_id",
+                  "tipe",
+                  "nominal"
+                ],
+                "properties": {
+                  "komoditas_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "30daecca-e788-46ab-8d6f-f31849b1fcf9"
+                  },
+                  "tipe": {
+                    "type": "string",
+                    "enum": [
+                      "naik_diatas",
+                      "turun_dibawah"
+                    ]
+                  },
+                  "nominal": {
+                    "type": "number",
+                    "example": 50000
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Alert berhasil dibuat",
+            "headers": {}
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict",
+            "description": "Conflict — data sudah ada atau kondisi tidak terpenuhi"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapok/alert/{id}": {
+      "delete": {
+        "summary": "Hapus Price Alert",
+        "deprecated": false,
+        "description": "Hapus price alert milik sendiri.",
+        "operationId": "bapok-alert-delete",
+        "tags": [
+          "Bapok / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alert berhasil dihapus",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapok/admin/komoditas": {
+      "post": {
+        "summary": "Tambah Komoditas Baru",
+        "deprecated": false,
+        "description": "",
+        "operationId": "bapok-admin-komoditas-create",
+        "tags": [
+          "Bapok / Admin"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "ikon": {
+                  "contentType": "image/png, image/svg+xml, image/webp"
+                }
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": {
+                    "type": "string",
+                    "example": "Beras Premium"
+                  },
+                  "kategori": {
+                    "type": "string",
+                    "example": "Beras"
+                  },
+                  "satuan": {
+                    "type": "string",
+                    "example": "kg"
+                  },
+                  "ikon": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Ikon komoditas (png/svg/webp, maks 500KB). Disimpan ke MinIO, URL-nya tersimpan sebagai `ikon_url`.",
+                    "example": ""
+                  }
+                },
+                "required": [
+                  "nama",
+                  "kategori",
+                  "satuan"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Komoditas berhasil ditambahkan",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bapokAdminKey": []
+          }
+        ]
+      }
+    },
+    "/bapok/admin/komoditas/{id}": {
+      "patch": {
+        "summary": "Update Komoditas",
+        "deprecated": false,
+        "description": "Update partial komoditas (PATCH — hanya field yang dikirim yang diubah).",
+        "operationId": "bapok-admin-komoditas-update",
+        "tags": [
+          "Bapok / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "ikon": {
+                  "contentType": "image/png, image/svg+xml, image/webp"
+                }
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nama": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "kategori": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "satuan": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "is_active": {
+                    "type": "boolean",
+                    "example": ""
+                  },
+                  "ikon": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Ganti ikon komoditas (opsional). png/svg/webp, maks 500KB.",
+                    "example": ""
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Komoditas berhasil diupdate",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "bapokAdminKey": []
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Hapus Komoditas",
+        "deprecated": false,
+        "description": "",
+        "operationId": "bapok-admin-komoditas-delete",
+        "tags": [
+          "Bapok / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Komoditas berhasil dihapus",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "bapokAdminKey": []
+          }
+        ]
+      }
+    },
+    "/bapok/admin/harga": {
+      "post": {
+        "summary": "Input Harga Komoditas",
+        "deprecated": false,
+        "description": "Input harga satu komoditas di satu pasar untuk tanggal tertentu.",
+        "operationId": "bapok-admin-harga-input",
+        "tags": [
+          "Bapok / Admin"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "komoditas_id",
+                  "pasar_id",
+                  "harga",
+                  "tanggal"
+                ],
+                "properties": {
+                  "komoditas_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "16791026-017a-4ee7-a359-2a9633629476"
+                  },
+                  "pasar_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "isi-pasar-id-dari-db"
+                  },
+                  "harga": {
+                    "type": "number",
+                    "example": 14000
+                  },
+                  "tanggal": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-05-03"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Harga berhasil diinput",
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bapokAdminKey": []
+          }
+        ]
+      }
+    },
+    "/bapok/admin/harga/bulk-csv": {
+      "post": {
+        "summary": "Upload CSV Massal Harga",
+        "deprecated": false,
+        "description": "Upload CSV untuk input harga banyak komoditas sekaligus.\n\nFormat header CSV: `nama_komoditas,nama_pasar,harga,tanggal`\n\nContoh baris: `Beras Medium,Pasar Besar Malang,13500,2026-05-03`",
+        "operationId": "bapok-admin-harga-bulk",
+        "tags": [
+          "Bapok / Admin"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "encoding": {
+                "file": {
+                  "contentType": "text/csv"
+                }
+              },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File CSV. Header wajib: `nama_komoditas,nama_pasar,harga,tanggal`. Contoh baris: `Beras Medium,Pasar Besar Malang,13500,2026-05-03`",
+                    "example": ""
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk upload selesai",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer"
+                            },
+                            "sukses": {
+                              "type": "integer"
+                            },
+                            "gagal": {
+                              "type": "integer"
+                            },
+                            "errors": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bapokAdminKey": []
+          }
+        ]
+      }
+    },
+    "/transjatim/koridor": {
+      "get": {
+        "summary": "List Koridor Aktif",
+        "deprecated": false,
+        "description": "Semua koridor Trans Jatim yang sedang aktif beroperasi.",
+        "operationId": "transjatim-koridor-list",
+        "tags": [
+          "Transjatim / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Daftar koridor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Koridor"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/transjatim/koridor/{id}": {
+      "get": {
+        "summary": "Detail Koridor",
+        "deprecated": false,
+        "description": "",
+        "operationId": "transjatim-koridor-detail",
+        "tags": [
+          "Transjatim / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "994119d9-89e4-4b7e-ab21-ef702e71a51b",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail koridor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Koridor"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": []
+      }
+    },
+    "/transjatim/halte/terdekat": {
+      "get": {
+        "summary": "Halte Terdekat dari Koordinat",
+        "deprecated": false,
+        "description": "Halte Trans Jatim terdekat dari koordinat pengguna. Terintegrasi dengan fitur Destinasi Wisata.",
+        "operationId": "transjatim-halte-terdekat",
+        "tags": [
+          "Transjatim / Public"
+        ],
+        "parameters": [
+          {
+            "name": "lat",
+            "in": "query",
+            "description": "Latitude",
+            "required": true,
+            "example": -7.2575,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "in": "query",
+            "description": "Longitude",
+            "required": true,
+            "example": 112.72,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "radius",
+            "in": "query",
+            "description": "Radius dalam meter",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 2000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar halte terdekat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/transjatim/armada/koridor/{koridorId}": {
+      "get": {
+        "summary": "List Armada Aktif di Koridor",
+        "deprecated": false,
+        "description": "Semua armada aktif di koridor tertentu beserta posisi GPS terakhir.",
+        "operationId": "transjatim-armada-by-koridor",
+        "tags": [
+          "Transjatim / Public"
+        ],
+        "parameters": [
+          {
+            "name": "koridorId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "994119d9-89e4-4b7e-ab21-ef702e71a51b",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daftar armada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BaseResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/transjatim/tiket": {
+      "post": {
+        "summary": "Beli Tiket",
+        "deprecated": false,
+        "description": "Membeli tiket Trans Jatim. Response berisi data tiket dan QR code base64 untuk di-scan petugas.",
+        "operationId": "transjatim-tiket-beli",
+        "tags": [
+          "Transjatim / Public"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BuatTiketRequest"
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Tiket berhasil dibeli",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tiket": {
+                      "$ref": "#/components/schemas/Tiket"
+                    },
+                    "qr_image": {
+                      "type": "string",
+                      "description": "QR code base64 untuk validasi petugas"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "Koridor tidak aktif",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "summary": "Riwayat Tiket Saya",
+        "deprecated": false,
+        "description": "Semua tiket yang pernah dibeli oleh pengguna yang sedang login.",
+        "operationId": "transjatim-tiket-riwayat",
+        "tags": [
+          "Transjatim / Public"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Riwayat tiket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Tiket"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/transjatim/tiket/{id}": {
+      "get": {
+        "summary": "Detail Tiket",
+        "deprecated": false,
+        "description": "Detail tiket beserta QR code. Hanya bisa diakses pemilik tiket.",
+        "operationId": "transjatim-tiket-detail",
+        "tags": [
+          "Transjatim / Public"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "adeef18b-739a-4818-8d35-a7d571391f33",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail tiket + QR",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tiket": {
+                      "$ref": "#/components/schemas/Tiket"
+                    },
+                    "qr_image": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden",
+            "description": "Tidak punya akses ke resource ini"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/transjatim/tiket/{id}/validasi": {
+      "post": {
+        "summary": "Validasi OTP Tiket",
+        "deprecated": false,
+        "description": "Dipakai petugas scanner di halte. OTP dari QR code. Status tiket berubah jadi `digunakan`.",
+        "operationId": "transjatim-tiket-validasi",
+        "tags": [
+          "Transjatim / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "adeef18b-739a-4818-8d35-a7d571391f33",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "otp"
+                ],
+                "properties": {
+                  "otp": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 6,
+                    "example": "482931"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tiket valid dan berhasil digunakan",
+            "headers": {}
+          },
+          "400": {
+            "description": "OTP tidak valid atau tiket sudah digunakan",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/transjatim/armada/{id}/lokasi": {
+      "put": {
+        "summary": "Update Lokasi Armada",
+        "deprecated": false,
+        "description": "Dipakai supir atau sistem GPS untuk update posisi bus. Setiap update trigger broadcast WebSocket ke semua klien yang subscribe koridor tersebut.",
+        "operationId": "transjatim-armada-update-lokasi",
+        "tags": [
+          "Transjatim / Admin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "7c7f743e-862a-41f4-8ddb-86f9123543c7",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "lat",
+                  "lng"
+                ],
+                "properties": {
+                  "lat": {
+                    "type": "number",
+                    "example": -7.305
+                  },
+                  "lng": {
+                    "type": "number",
+                    "example": 112.731
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Lokasi diupdate + broadcast WebSocket ke klien",
+            "headers": {}
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound",
+            "description": "Resource tidak ditemukan"
+          }
+        },
+        "security": []
+      }
+    },
+    "/bansos/status-saya": {
+      "get": {
+        "summary": "status eligible",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "pengumuman",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/bansos/admin/pengumuman": {
+      "post": {
+        "summary": "create pengumuman",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bansos/admin/pengumuman/dd752975-c31e-41f7-b606-8234fc80f1fb": {
+      "patch": {
+        "summary": "update pengumuman",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "delete": {
+        "summary": "delete pengumuman",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bansos/admin/sync": {
+      "post": {
+        "summary": "admin sync",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/sinaker/admin/lowongan": {
+      "post": {
+        "summary": "make-lowioangan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/sinaker/admin/lowongan/5caa782b-949c-4392-91eb-6db970b8ab4c": {
+      "patch": {
+        "summary": "change status",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/sinaker/admin/pelamar": {
+      "get": {
+        "summary": "pelamar",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/sinaker/lowongan": {
+      "get": {
+        "summary": "lowongan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/lowongan/5caa782b-949c-4392-91eb-6db970b8ab4c": {
+      "get": {
+        "summary": "lowongan by id",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/sinaker/lowongan/5caa782b-949c-4392-91eb-6db970b8ab4c/lamar": {
+      "post": {
+        "summary": "apply",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/sinaker/lamaran": {
+      "get": {
+        "summary": "lamaran",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/sinaker/profil": {
+      "get": {
+        "summary": "profil",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "save profile",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapenda/admin/rekap": {
+      "get": {
+        "summary": "rekap",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapenda/widget": {
+      "get": {
+        "summary": "widget",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapenda/tagihan/S 8899 KL": {
+      "get": {
+        "summary": "tagihan/nopol",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapenda/etbpkb/VA-1779381167807": {
+      "get": {
+        "summary": "etbpkb",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapenda/tagihan/S 8899 KL/bayar": {
+      "post": {
+        "summary": "bayar",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapenda/webhook/payment": {
+      "post": {
+        "summary": "payment",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapenda/pembayaran": {
+      "get": {
+        "summary": "pembayaran",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/bapenda/kendaraan": {
+      "get": {
+        "summary": "kendaraan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/wisata/admin/scan": {
+      "post": {
+        "summary": "scan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/wisata/48ee5fef-799b-4c39-92ef-bf81529249fd/beli-tiket": {
+      "post": {
+        "summary": "beli-tiket",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/wisata/tiket-saya": {
+      "get": {
+        "summary": "tiket-saya",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/wisata": {
+      "get": {
+        "summary": "wisata",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/wisata/48ee5fef-799b-4c39-92ef-bf81529249fd": {
+      "get": {
+        "summary": "wisata by id",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/wisata/48ee5fef-799b-4c39-92ef-bf81529249fd/rute-transjatim": {
+      "get": {
+        "summary": "rute",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/darurat/admin/laporan": {
+      "get": {
+        "summary": "laporan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/darurat/instansi": {
+      "get": {
+        "summary": "instansi",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/darurat/panic": {
+      "post": {
+        "summary": "panic",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/darurat/riwayat": {
+      "get": {
+        "summary": "riwayat",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/etibi/admin/pasien": {
+      "get": {
+        "summary": "pasien",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/etibi/skrining": {
+      "post": {
+        "summary": "skrining",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/etibi/pertanyaan": {
+      "get": {
+        "summary": "pertanyaan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/etibi/hasil-skrining": {
+      "get": {
+        "summary": "hasil-skrining",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/etibi/konfirmasi-obat": {
+      "post": {
+        "summary": "konfirmasi-obat",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/etibi/kalender-kepatuhan": {
+      "get": {
+        "summary": "kalender-kepatuhan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/etibi/status-pengobatan": {
+      "get": {
+        "summary": "status-pengobatan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BaseResponse": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success",
+              "error"
+            ],
+            "example": "success"
+          },
+          "message": {
+            "type": "string",
+            "example": "Operasi berhasil"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "error",
+          "code"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "error"
+          },
+          "message": {
+            "type": "string",
+            "example": "Token tidak valid"
+          },
+          "error": {
+            "type": "string",
+            "example": "UNAUTHORIZED"
+          },
+          "code": {
+            "type": "integer",
+            "example": 401
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "nik",
+          "password",
+          "nama",
+          "no_hp",
+          "fcm_token"
+        ],
+        "properties": {
+          "nik": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 16,
+            "description": "NIK KTP 16 digit",
+            "example": "3578010101900002"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "password123"
+          },
+          "nama": {
+            "type": "string",
+            "example": "Budi Sintara"
+          },
+          "no_hp": {
+            "type": "string",
+            "example": "08123456789"
+          },
+          "fcm_token": {
+            "type": "string",
+            "description": "Firebase Cloud Messaging token untuk push notification",
+            "example": "device-token-fcm-xxx"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "nik",
+          "password",
+          "fcm_token"
+        ],
+        "properties": {
+          "nik": {
+            "type": "string",
+            "example": "3578010101900002"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          },
+          "fcm_token": {
+            "type": "string",
+            "example": "device-token-fcm-xxx"
+          }
+        }
+      },
+      "LoginResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "required": [
+                  "access_token",
+                  "refresh_token",
+                  "expires_in",
+                  "user"
+                ],
+                "properties": {
+                  "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  },
+                  "refresh_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  },
+                  "expires_in": {
+                    "type": "integer",
+                    "description": "Detik hingga token expired",
+                    "example": 900
+                  },
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "nik": {
+                        "type": "string",
+                        "example": "357801****0002"
+                      },
+                      "nama": {
+                        "type": "string",
+                        "example": "Budi Sintara"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "UserProfile": {
+        "type": "object",
+        "required": [
+          "id",
+          "nik",
+          "nama"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nik": {
+            "type": "string",
+            "example": "357801****0002"
+          },
+          "nama": {
+            "type": "string",
+            "example": "Budi Sintara"
+          },
+          "no_hp": {
+            "type": "string",
+            "example": "08123456789"
+          }
+        }
+      },
+      "AntreanRequest": {
+        "type": "object",
+        "required": [
+          "poli_id",
+          "dokter_id",
+          "tanggal"
+        ],
+        "properties": {
+          "poli_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "3bb1b554-a5a1-7d08-7c12-5e1d58984de5"
+          },
+          "dokter_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "6cab51a0-a519-f377-a089-7a67b575492c"
+          },
+          "tanggal": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-04-07"
+          }
+        }
+      },
+      "Antrean": {
+        "type": "object",
+        "required": [
+          "antrean_id",
+          "nomor_antrean",
+          "status"
+        ],
+        "properties": {
+          "antrean_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nomor_antrean": {
+            "type": "string",
+            "example": "A-023"
+          },
+          "poli": {
+            "type": "string",
+            "example": "Penyakit Dalam"
+          },
+          "dokter": {
+            "type": "string",
+            "example": "dr. Ahmad Sp.PD"
+          },
+          "estimasi_jam": {
+            "type": "string",
+            "example": "09:45"
+          },
+          "qr_checkin": {
+            "type": "string",
+            "example": "data:image/png;base64,..."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "menunggu",
+              "dipanggil",
+              "selesai"
+            ],
+            "example": "menunggu"
+          }
+        }
+      },
+      "Komoditas": {
+        "type": "object",
+        "required": [
+          "id",
+          "nama",
+          "satuan",
+          "is_active"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama": {
+            "type": "string",
+            "example": "Beras Medium"
+          },
+          "kategori": {
+            "type": "string",
+            "example": "Beras"
+          },
+          "satuan": {
+            "type": "string",
+            "example": "kg"
+          },
+          "ikon_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "harga_rata_rata": {
+            "type": "number",
+            "example": 13500
+          },
+          "harga_terendah": {
+            "type": "number",
+            "example": 12000
+          },
+          "harga_tertinggi": {
+            "type": "number",
+            "example": 15000
+          },
+          "tanggal_harga": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "HargaHarian": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_komoditas": {
+            "type": "string"
+          },
+          "satuan": {
+            "type": "string"
+          },
+          "pasar_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_pasar": {
+            "type": "string"
+          },
+          "harga": {
+            "type": "number"
+          },
+          "tanggal": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "PriceAlert": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_nik": {
+            "type": "string"
+          },
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipe": {
+            "type": "string",
+            "enum": [
+              "naik_diatas",
+              "turun_dibawah"
+            ]
+          },
+          "nominal": {
+            "type": "number"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "last_triggered_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nama_komoditas": {
+            "type": "string"
+          }
+        }
+      },
+      "Koridor": {
+        "type": "object",
+        "required": [
+          "id",
+          "kode",
+          "nama",
+          "is_active"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kode": {
+            "type": "string",
+            "example": "TJ-01"
+          },
+          "nama": {
+            "type": "string",
+            "example": "Koridor 1 - Purabaya - Darmo"
+          },
+          "asal": {
+            "type": "string",
+            "example": "Terminal Purabaya"
+          },
+          "tujuan": {
+            "type": "string",
+            "example": "Jl. Darmo"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Tiket": {
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_nik": {
+            "type": "string"
+          },
+          "koridor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "jumlah": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "valid",
+              "digunakan",
+              "expired"
+            ]
+          },
+          "valid_sampai": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "koridor": {
+            "type": "object",
+            "properties": {
+              "kode": {
+                "type": "string"
+              },
+              "nama": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "BuatTiketRequest": {
+        "type": "object",
+        "required": [
+          "koridor_id",
+          "jumlah"
+        ],
+        "properties": {
+          "koridor_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "994119d9-89e4-4b7e-ab21-ef702e71a51b"
+          },
+          "jumlah": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "example": 1
+          }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Token tidak valid atau tidak disertakan",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "Berhasil": {
+                "summary": "Berhasil",
+                "value": {
+                  "status": "error",
+                  "message": "Token tidak valid",
+                  "error": "UNAUTHORIZED",
+                  "code": 401
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Tidak punya akses ke resource ini",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "Berhasil": {
+                "summary": "Berhasil",
+                "value": {
+                  "status": "error",
+                  "message": "Akses ditolak",
+                  "error": "FORBIDDEN",
+                  "code": 403
+                }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource tidak ditemukan",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "Berhasil": {
+                "summary": "Berhasil",
+                "value": {
+                  "status": "error",
+                  "message": "Data tidak ditemukan",
+                  "error": "NOT_FOUND",
+                  "code": 404
+                }
+              }
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflict — data sudah ada atau kondisi tidak terpenuhi",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "Berhasil": {
+                "summary": "Berhasil",
+                "value": {
+                  "status": "error",
+                  "message": "Data sudah ada",
+                  "error": "CONFLICT",
+                  "code": 409
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT `access_token` dari `POST /auth/login`. Di Apidog, set variable **`ACCESS_TOKEN`** di environment. Token expired dalam 900 detik.",
+        "x-apidog-auth": {
+          "type": "bearer",
+          "tokenVariableName": "ACCESS_TOKEN"
+        }
+      },
+      "islamicAdminKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-admin-key",
+        "description": "Admin Key untuk modul Islamic. Di Apidog, set variable **`ISLAMIC_ADMIN_KEY`** di environment.",
+        "x-apidog-auth": {
+          "type": "apikey",
+          "keyVariableName": "ISLAMIC_ADMIN_KEY"
+        }
+      },
+      "bapokAdminKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Admin-Key",
+        "description": "Admin Key untuk modul Bapok. Di Apidog, set variable **`BAPOK_ADMIN_KEY`** di environment.",
+        "x-apidog-auth": {
+          "type": "apikey",
+          "keyVariableName": "BAPOK_ADMIN_KEY"
+        }
+      }
+    },
+    "parameters": {
+      "IdPath": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "UUID resource"
+      }
+    }
+  },
+  "servers": [],
+  "security": []
+}

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/bapenda_provider.dart';
 import 'package:majadigi_superapp_frontend/screens/bapenda_vehicle_detail_screen.dart';
 
 class VehicleCard extends StatelessWidget {
@@ -150,16 +152,28 @@ class VehicleCard extends StatelessWidget {
   }
 }
 
-class TabLayanan extends StatelessWidget {
+class TabLayanan extends StatefulWidget {
   const TabLayanan({super.key});
+
+  @override
+  State<TabLayanan> createState() => _TabLayananState();
+}
+
+class _TabLayananState extends State<TabLayanan> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<BapendaProvider>(context, listen: false).fetchVehicles();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: ListView(
-        shrinkWrap: true, // Karena berada di dalam SingleChildScrollView di bapenda_screen
-        physics: const NeverScrollableScrollPhysics(), 
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Daftar Kendaraan Anda',
@@ -180,24 +194,105 @@ class TabLayanan extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // Dummy 1 (Warning)
-          const VehicleCard(
-            platNomor: 'L 1234 AB',
-            merk: 'HONDA',
-            tipe: 'VARIO 150',
-            tanggalJatuhTempo: '15 Mei 2026',
-            isWarning: true,
-            statusText: 'Jatuh tempo H-8',
-          ),
-          const SizedBox(height: 16),
-          // Dummy 2 (Active)
-          const VehicleCard(
-            platNomor: 'W 5678 CD',
-            merk: 'TOYOTA',
-            tipe: 'AVANZA 1.5 G',
-            tanggalJatuhTempo: '20 November 2026',
-            isWarning: false,
-            statusText: 'Aktif',
+          Consumer<BapendaProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoadingVehicles) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0065FF)),
+                    ),
+                  ),
+                );
+              }
+
+              if (provider.errorVehicles != null) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444)),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Gagal mengambil data kendaraan. Silakan coba lagi.',
+                              style: TextStyle(
+                                color: Color(0xFFB91C1C),
+                                fontSize: 13,
+                                fontFamily: 'Inter',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: () => provider.fetchVehicles(),
+                        icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
+                        label: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (provider.vehicles.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  width: double.infinity,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.directions_car_filled_outlined, color: Colors.grey.shade400, size: 48),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Tidak ada kendaraan terdaftar',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: provider.vehicles.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final vehicle = provider.vehicles[index];
+                  return VehicleCard(
+                    platNomor: vehicle.platNomor,
+                    merk: vehicle.merk,
+                    tipe: vehicle.tipe,
+                    tanggalJatuhTempo: vehicle.tanggalJatuhTempo,
+                    isWarning: vehicle.isWarning,
+                    statusText: vehicle.statusText,
+                  );
+                },
+              );
+            },
           ),
         ],
       ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:majadigi_superapp_frontend/utils/app_colors.dart';
 import 'package:majadigi_superapp_frontend/widgets/expandable_info_card.dart';
 import 'package:majadigi_superapp_frontend/widgets/service_detail_tile.dart';
-import 'package:majadigi_superapp_frontend/screens/vehicle_tax_info_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/bapenda_screen.dart';
 
 class AgencyDetailScreen extends StatefulWidget {
   const AgencyDetailScreen({super.key});
@@ -235,7 +235,7 @@ class _AgencyDetailScreenState extends State<AgencyDetailScreen> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const VehicleTaxInfoScreen()),
+              MaterialPageRoute(builder: (context) => const BapendaScreen()),
             );
           },
         ),

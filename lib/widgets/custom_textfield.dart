@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CustomTextField extends StatelessWidget {
+class CustomTextField extends StatefulWidget {
   final String? label;
   final String hintText;
   final TextEditingController? controller;
@@ -27,13 +27,46 @@ class CustomTextField extends StatelessWidget {
   });
 
   @override
+  State<CustomTextField> createState() => _CustomTextFieldState();
+}
+
+class _CustomTextFieldState extends State<CustomTextField> {
+  late bool _obscureText;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscureText = widget.isPassword;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    Widget? suffix;
+    if (widget.isPassword) {
+      suffix = IconButton(
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        icon: Icon(
+          _obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          color: const Color(0xFF94A3B8),
+          size: 20,
+        ),
+        onPressed: () {
+          setState(() {
+            _obscureText = !_obscureText;
+          });
+        },
+      );
+    } else if (widget.suffixIcon != null) {
+      suffix = Icon(widget.suffixIcon, color: const Color(0xFF94A3B8), size: 20);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label != null) ...[
+        if (widget.label != null) ...[
           Text(
-            label!,
+            widget.label!,
             style: const TextStyle(
               color: Color(0xFF4A5565),
               fontSize: 14,
@@ -45,12 +78,12 @@ class CustomTextField extends StatelessWidget {
           const SizedBox(height: 12),
         ],
         TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: isPassword,
-          onTap: onTap,
-          readOnly: readOnly,
-          validator: validator,
+          controller: widget.controller,
+          keyboardType: widget.keyboardType,
+          obscureText: _obscureText,
+          onTap: widget.onTap,
+          readOnly: widget.readOnly,
+          validator: widget.validator,
           style: const TextStyle(
             fontSize: 14,
             fontFamily: 'Inter',
@@ -58,7 +91,7 @@ class CustomTextField extends StatelessWidget {
             color: Color(0xFF1E293B),
           ),
           decoration: InputDecoration(
-            hintText: hintText,
+            hintText: widget.hintText,
             hintStyle: const TextStyle(
               color: Color(0xFF94A3B8),
               fontSize: 14,
@@ -84,12 +117,10 @@ class CustomTextField extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.33),
             ),
-            prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, color: const Color(0xFF94A3B8), size: 20)
+            prefixIcon: widget.prefixIcon != null
+                ? Icon(widget.prefixIcon, color: const Color(0xFF94A3B8), size: 20)
                 : null,
-            suffixIcon: suffixIcon != null
-                ? Icon(suffixIcon, color: const Color(0xFF94A3B8), size: 20)
-                : null,
+            suffixIcon: suffix,
           ),
         ),
       ],

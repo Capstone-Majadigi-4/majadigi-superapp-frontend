@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'rsud_ambil_antrean_screen.dart';
+import 'rsud_ruang_inap_screen.dart';
 
 class RsudSaifulAnwarScreen extends StatelessWidget {
   const RsudSaifulAnwarScreen({super.key});
@@ -54,6 +57,27 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                    Consumer<ModuleProvider>(
+                      builder: (context, moduleProvider, _) {
+                        final isFav = moduleProvider.isFavorite('rsud');
+                        return GestureDetector(
+                          onTap: () => moduleProvider.toggleFavorite('rsud'),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFav ? Icons.star_rounded : Icons.star_border_rounded,
+                              color: isFav ? const Color(0xFFF59E0B) : Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -115,6 +139,17 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const RsudAmbilAntreanScreen()),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildGradientButton(
+                      title: 'Ketersediaan Kamar Inap',
+                      icon: Icons.bed_rounded,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RsudRuangInapScreen()),
                         );
                       },
                     ),

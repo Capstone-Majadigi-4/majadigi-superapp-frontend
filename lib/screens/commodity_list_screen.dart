@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/bapok_provider.dart';
+import 'package:majadigi_superapp_frontend/widgets/shimmer.dart';
+import 'package:majadigi_superapp_frontend/models/bapok_ticker_model.dart';
 import 'package:majadigi_superapp_frontend/screens/commodity_detail_screen.dart';
 
 class CommodityListScreen extends StatefulWidget {
@@ -11,94 +15,72 @@ class CommodityListScreen extends StatefulWidget {
 
 class _CommodityListScreenState extends State<CommodityListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
-  final List<Map<String, dynamic>> commodities = const [
-    {
-      'name': 'Daging Ayam Ras',
-      'price': 'Rp 35.610',
-      'unit': 'Per kg',
-      'image': 'https://placehold.co/100x100?text=Ayam',
-      'trend': 'down', // down = green arrow down
-    },
-    {
-      'name': 'Daging Sapi Paha Belakang',
-      'price': 'Rp 118.400',
-      'unit': 'Per kg',
-      'image': 'https://placehold.co/100x100?text=Sapi',
-      'trend': 'up', // up = red arrow up
-    },
-    {
-      'name': 'Gas Elpiji 3 Kg',
-      'price': 'Rp 18.500',
-      'unit': 'Per tabung',
-      'image': 'https://placehold.co/100x100?text=LPG',
-      'trend': 'stable',
-    },
-    {
-      'name': 'Gula Kristal Putih',
-      'price': 'Rp 16.200',
-      'unit': 'Per kg',
-      'image': 'https://placehold.co/100x100?text=Gula',
-      'trend': 'down',
-    },
-    {
-      'name': 'Beras Premium',
-      'price': 'Rp 15.000',
-      'unit': 'Per kg',
-      'image': 'https://placehold.co/100x100?text=Beras',
-      'trend': 'up',
-    },
-    {
-      'name': 'Minyak Goreng Kemasan',
-      'price': 'Rp 17.800',
-      'unit': 'Per liter',
-      'image': 'https://placehold.co/100x100?text=Minyak',
-      'trend': 'stable',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<BapokProvider>(context, listen: false).fetchKomoditas();
+    });
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    Widget content = Column(
-      children: [
-        // Search Bar Section
-        Container(
-          padding: const EdgeInsets.all(16),
-          color: widget.showAppBar ? const Color(0xFF0065FF) : Colors.transparent,
-          child: Container(
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: widget.showAppBar ? null : Border.all(color: const Color(0xFFE5E7EB)),
-              boxShadow: widget.showAppBar ? null : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+    Widget content = RefreshIndicator(
+      onRefresh: () => Provider.of<BapokProvider>(context, listen: false).fetchKomoditas(),
+      child: Column(
+        children: [
+          // Search Bar Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            color: widget.showAppBar ? const Color(0xFF0065FF) : Colors.transparent,
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: widget.showAppBar ? null : Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: widget.showAppBar ? null : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  hintText: 'Cari data bahan pokok...',
+                  hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
+                  prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8)),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 15),
                 ),
-              ],
-            ),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Cari data bahan pokok...',
-                hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                prefixIcon: Icon(Icons.search, color: Color(0xFF94A3B8)),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 15),
               ),
             ),
           ),
-        ),
 
-        // Grid View Section
-        widget.showAppBar 
-          ? Expanded(
-              child: _buildGrid(),
-            )
-          : _buildGrid(),
-      ],
+          // Grid View Section
+          widget.showAppBar 
+            ? Expanded(
+                child: _buildGrid(),
+              )
+            : _buildGrid(),
+        ],
+      ),
     );
 
     if (!widget.showAppBar) return content;
@@ -121,45 +103,164 @@ class _CommodityListScreenState extends State<CommodityListScreen> {
             fontFamily: 'Inter',
           ),
         ),
+        actions: const [],
       ),
       body: content,
     );
   }
 
   Widget _buildGrid() {
+    return Consumer<BapokProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return _buildShimmerGrid();
+        }
+
+        final items = provider.komoditasList.where((item) {
+          return item.nama.toLowerCase().contains(_searchQuery) ||
+              item.kategori.toLowerCase().contains(_searchQuery);
+        }).toList();
+
+        if (items.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          shrinkWrap: !widget.showAppBar,
+          physics: widget.showAppBar ? const AlwaysScrollableScrollPhysics() : const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.82,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            String formattedPrice = 'Rp ${item.hargaRataRata.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+            String trend = 'stable';
+            if (item.perubahanPersen != null) {
+              if (item.perubahanPersen! > 0) {
+                trend = 'up';
+              } else if (item.perubahanPersen! < 0) {
+                trend = 'down';
+              }
+            }
+
+            // High-quality fallback image URL for commodity representation
+            String fallbackImageUrl = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150';
+            if (item.nama.toLowerCase().contains('beras')) {
+              fallbackImageUrl = 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=150';
+            } else if (item.nama.toLowerCase().contains('daging')) {
+              fallbackImageUrl = 'https://images.unsplash.com/photo-1603048588665-791ca8aea617?auto=format&fit=crop&q=80&w=150';
+            } else if (item.nama.toLowerCase().contains('minyak')) {
+              fallbackImageUrl = 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&q=80&w=150';
+            } else if (item.nama.toLowerCase().contains('gula')) {
+              fallbackImageUrl = 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?auto=format&fit=crop&q=80&w=150';
+            } else if (item.nama.toLowerCase().contains('gas') || item.nama.toLowerCase().contains('lpg')) {
+              fallbackImageUrl = 'https://images.unsplash.com/photo-1628157582853-a796fa650a6a?auto=format&fit=crop&q=80&w=150';
+            }
+
+            return CommodityGridCard(
+              name: item.nama,
+              price: formattedPrice,
+              unit: 'Per ${item.satuan}',
+              imageUrl: item.ikonUrl ?? fallbackImageUrl,
+              trend: trend,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CommodityDetailScreen(
+                      komoditas: item,
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildShimmerGrid() {
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       shrinkWrap: !widget.showAppBar,
-      physics: widget.showAppBar ? null : const NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
         childAspectRatio: 0.82,
       ),
-      itemCount: commodities.length,
+      itemCount: 4,
       itemBuilder: (context, index) {
-        final item = commodities[index];
-        return CommodityGridCard(
-          name: item['name'],
-          price: item['price'],
-          unit: item['unit'],
-          imageUrl: item['image'],
-          trend: item['trend'],
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CommodityDetailScreen(
-                  name: item['name'],
-                  price: item['price'],
-                  unit: item['unit'],
-                ),
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Column(
+            children: [
+              Shimmer.circular(width: 70, height: 70),
+              const SizedBox(height: 12),
+              Shimmer.rectangular(height: 14, width: 100),
+              const SizedBox(height: 8),
+              Shimmer.rectangular(height: 12, width: 60),
+              const Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Shimmer.rectangular(height: 16, width: 60),
+                      const SizedBox(height: 4),
+                      Shimmer.rectangular(height: 10, width: 30),
+                    ],
+                  ),
+                  Shimmer.circular(width: 20, height: 20),
+                ],
               ),
-            );
-          },
+            ],
+          ),
         );
       },
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off_outlined, size: 40, color: Color(0xFF94A3B8)),
+          const SizedBox(height: 16),
+          Text(
+            'Komoditas Tidak Ditemukan',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Data harga komoditas bahan pokok yang Anda cari tidak ditemukan atau kosong.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.5),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -248,27 +349,31 @@ class CommodityGridCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      price,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF155DFC),
-                        fontFamily: 'Inter',
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        price,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF155DFC),
+                          fontFamily: 'Inter',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Text(
-                      unit,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF94A3B8),
-                        fontFamily: 'Inter',
+                      Text(
+                        unit,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF94A3B8),
+                          fontFamily: 'Inter',
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 
                 // Trend Icon in small circle

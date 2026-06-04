@@ -1,5 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/auth_provider.dart';
 import 'package:majadigi_superapp_frontend/screens/home_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/register_screen.dart';
 import 'package:majadigi_superapp_frontend/utils/app_colors.dart';
@@ -15,6 +17,15 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = false;
+  final TextEditingController _nikController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nikController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,12 +158,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 40),
 
                         // Form Fields
-                        const CustomTextField(
+                        CustomTextField(
                           hintText: 'NIK',
+                          controller: _nikController,
+                          keyboardType: TextInputType.number,
                         ),
                         const SizedBox(height: 20),
-                        const CustomTextField(
+                        CustomTextField(
                           hintText: 'Kata sandi',
+                          controller: _passwordController,
                           isPassword: true,
                           suffixIcon: Icons.visibility_outlined,
                         ),
@@ -198,13 +212,48 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 40),
 
                         // Action Button
-                        CustomButton(
-                          text: 'Masuk',
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const HomeScreen()),
-                            );
+                        Consumer<AuthProvider>(
+                          builder: (context, auth, _) {
+                            return auth.isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : CustomButton(
+                                    text: 'Masuk',
+                                    onPressed: () async {
+                                      final nik = _nikController.text.trim();
+                                      final password = _passwordController.text;
+
+                                      if (nik.isEmpty || password.isEmpty) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('NIK dan kata sandi wajib diisi'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      final success = await auth.login(
+                                        nik: nik,
+                                        password: password,
+                                      );
+
+                                      if (!context.mounted) return;
+
+                                      if (success) {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(auth.errorMessage ?? 'Gagal masuk. Silakan coba lagi.'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  );
                           },
                         ),
                         const SizedBox(height: 32),

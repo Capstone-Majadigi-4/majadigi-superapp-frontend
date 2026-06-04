@@ -21,30 +21,35 @@ class TransjatimRouteDetailScreen extends StatelessWidget {
             top: 0,
             left: 0,
             right: 0,
-            child: Container(
+            child: SizedBox(
               height: 253,
-              decoration: const BoxDecoration(
-                color: Color(0xFF0065FF),
-                image: DecorationImage(
-                  image: NetworkImage("https://placehold.co/449x253"),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.4),
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.4),
-                    ],
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF0065FF), Color(0xFF0040A1)],
+                      ),
+                    ),
                   ),
-                ),
-                padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.4),
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.4),
+                        ],
+                      ),
+                    ),
+                    padding: const EdgeInsets.only(top: 60, left: 24, right: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -85,8 +90,10 @@ class TransjatimRouteDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
+            ],
           ),
+        ),
+      ),
 
           // Content
           Positioned.fill(

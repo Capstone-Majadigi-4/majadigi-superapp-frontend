@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/transjatim_provider.dart';
 import 'transjatim_tracking_screen.dart';
 import 'transjatim_route_screen.dart';
 import 'transjatim_payment_screen.dart';
@@ -12,14 +14,21 @@ class TransjatimTicketScreen extends StatefulWidget {
 
 class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TransJatimProvider>().fetchKoridor();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: Stack(
+      body: Column(
         children: [
           // Header Background
           Container(
-            height: 220,
             decoration: const BoxDecoration(
               color: Color(0xFF0065FF),
               borderRadius: BorderRadius.only(
@@ -41,141 +50,153 @@ class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
                     ),
                   ),
                 ),
+                SafeArea(
+                  bottom: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Navigation
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Text(
+                              'Transjatim',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () {},
+                              icon: const Icon(Icons.history, color: Colors.white),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white.withOpacity(0.2),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Sub Navigation Tabs
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              _buildNavItem('Tracking', false, () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const TransjatimTrackingScreen()),
+                                );
+                              }),
+                              _buildNavItem('Rute', false, () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const TransjatimRouteScreen()),
+                                );
+                              }),
+                              _buildNavItem('Tiket', true, () {}),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
 
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Navigation
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        'Transjatim',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.history, color: Colors.white),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // Sub Navigation Tabs
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Beli E-Ticket',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0A0A0A),
                     ),
-                    child: Row(
-                      children: [
-                        _buildNavItem('Tracking', false, () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const TransjatimTrackingScreen()),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Pilih koridor untuk melanjutkan pembelian',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Consumer<TransJatimProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.isLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (provider.errorMessage != null) {
+                        return Center(child: Text(provider.errorMessage!));
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: provider.koridorList.length,
+                        itemBuilder: (context, index) {
+                          final koridor = provider.koridorList[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _buildTicketCard(
+                              id: koridor.id,
+                              number: koridor.kode.replaceAll(RegExp(r'[^0-9]'), ''), // e.g. K1 -> 1
+                              title: koridor.nama,
+                              price: koridor.tarif,
+                              route: '${koridor.asal} - ${koridor.tujuan}',
+                              distance: koridor.jarak,
+                              duration: koridor.durasi,
+                              activeBus: koridor.jumlahBus.toString(),
+                            ),
                           );
-                        }),
-                        _buildNavItem('Rute', false, () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const TransjatimRouteScreen()),
-                          );
-                        }),
-                        _buildNavItem('Tiket', true, () {}),
-                      ],
-                    ),
+                        },
+                      );
+                    },
                   ),
-                ),
-
-                const SizedBox(height: 24),
-
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Beli E-Ticket',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0A0A0A),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Pilih koridor untuk melanjutkan pembelian',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildTicketCard(
-                          number: '1',
-                          title: 'Koridor 1',
-                          price: 'Rp 5.000',
-                          route: 'Terminal Purabaya - Bandara Juanda',
-                          distance: '25 km',
-                          duration: '45 menit',
-                          activeBus: '8',
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTicketCard(
-                          number: '2',
-                          title: 'Koridor 2',
-                          price: 'Rp 5.000',
-                          route: 'Terminal Kertajaya - Terminal Purabaya',
-                          distance: '32 km',
-                          duration: '60 menit',
-                          activeBus: '12',
-                        ),
-                        const SizedBox(height: 32),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
         ],
@@ -201,6 +222,8 @@ class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
               fontSize: 14,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),
@@ -208,6 +231,7 @@ class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
   }
 
   Widget _buildTicketCard({
+    required String id,
     required String number,
     required String title,
     required String price,
@@ -258,17 +282,21 @@ class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       Row(
                         children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0A0A0A),
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0A0A0A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
@@ -303,10 +331,11 @@ class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildStatMini('Jarak', distance),
+                const SizedBox(width: 8),
                 _buildStatMini('Durasi', duration),
+                const SizedBox(width: 8),
                 _buildStatMini('Bus Aktif', activeBus, isSuccess: true),
               ],
             ),
@@ -318,6 +347,7 @@ class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => TransjatimPaymentScreen(
+                    corridorId: id,
                     amount: price,
                     corridorName: title,
                   ),
@@ -357,25 +387,31 @@ class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
   }
 
   Widget _buildStatMini(String label, String value, {bool isSuccess = false}) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 11,
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 11,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            color: isSuccess ? const Color(0xFF15803D) : const Color(0xFF0A0A0A),
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              color: isSuccess ? const Color(0xFF15803D) : const Color(0xFF0A0A0A),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

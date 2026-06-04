@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'transjatim_ticket_active_screen.dart';
 
 class TransjatimPaymentSuccessScreen extends StatefulWidget {
   const TransjatimPaymentSuccessScreen({super.key});
@@ -127,7 +128,7 @@ class _TransjatimPaymentSuccessScreenState extends State<TransjatimPaymentSucces
                           route: 'Koridor Probolinggo • Terminal Probolinggo',
                           distance: '15 km',
                           price: 'Rp 10.000',
-                          imageUrl: 'https://placehold.co/600x400?text=Gunung+Bromo',
+                          imageUrl: 'https://placehold.co/600x400.png?text=Gunung+Bromo',
                         ),
 
                         const SizedBox(height: 40),
@@ -183,7 +184,13 @@ class _TransjatimPaymentSuccessScreenState extends State<TransjatimPaymentSucces
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const TransjatimTicketActiveScreen()),
+                (route) => route.isFirst,
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF0065FF),
               minimumSize: const Size(double.infinity, 48),

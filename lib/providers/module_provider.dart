@@ -12,6 +12,7 @@ import 'package:majadigi_superapp_frontend/screens/siskaperbapo_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/islamic_center_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/transjatim_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/emergency_numbers_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/sapabansos_screen.dart';
 
 class ModuleProvider extends ChangeNotifier {
   static const String _prefKey = 'installed_modules';
@@ -169,15 +170,24 @@ class ModuleProvider extends ChangeNotifier {
         'Rincian jumlah bantuan per program',
         'Panduan pendaftaran bantuan sosial'
       ],
-      destinationScreen: Scaffold(body: Center(child: Text('SapaBansos Coming Soon'))),
+      destinationScreen: SapabansosScreen(),
     ),
   ];
 
+  static const String _favPrefKey = 'favorite_modules';
+
+  List<String> _favoriteModuleIds = [];
+
   List<String> get installedModuleIds => _installedModuleIds;
+  List<String> get favoriteModuleIds => _favoriteModuleIds;
   List<ServiceModule> get availableModules => _availableModules;
 
   List<ServiceModule> get installedModules {
     return _availableModules.where((m) => _installedModuleIds.contains(m.id)).toList();
+  }
+
+  List<ServiceModule> get favoriteModules {
+    return _availableModules.where((m) => _favoriteModuleIds.contains(m.id)).toList();
   }
 
   ModuleProvider() {
@@ -186,13 +196,25 @@ class ModuleProvider extends ChangeNotifier {
 
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
-    List<String>? saved = _prefs?.getStringList(_prefKey);
-    if (saved != null) {
-      _installedModuleIds = saved;
+    
+    // Load installed modules
+    List<String>? savedInstalled = _prefs?.getStringList(_prefKey);
+    if (savedInstalled != null) {
+      _installedModuleIds = savedInstalled;
     } else {
       _installedModuleIds = ['bapenda', 'transjatim', 'emergency'];
       await _prefs?.setStringList(_prefKey, _installedModuleIds);
     }
+
+    // Load favorite modules
+    List<String>? savedFavs = _prefs?.getStringList(_favPrefKey);
+    if (savedFavs != null) {
+      _favoriteModuleIds = savedFavs;
+    } else {
+      _favoriteModuleIds = ['bapenda', 'transjatim', 'emergency'];
+      await _prefs?.setStringList(_favPrefKey, _favoriteModuleIds);
+    }
+    
     notifyListeners();
   }
 
@@ -208,11 +230,36 @@ class ModuleProvider extends ChangeNotifier {
     if (_installedModuleIds.contains(id)) {
       _installedModuleIds.remove(id);
       await _prefs?.setStringList(_prefKey, _installedModuleIds);
+      
+      // Also remove from favorite if uninstalled
+      if (_favoriteModuleIds.contains(id)) {
+        _favoriteModuleIds.remove(id);
+        await _prefs?.setStringList(_favPrefKey, _favoriteModuleIds);
+      }
       notifyListeners();
     }
   }
 
   bool isInstalled(String id) {
     return _installedModuleIds.contains(id);
+  }
+
+  Future<void> toggleFavorite(String id) async {
+    if (_favoriteModuleIds.contains(id)) {
+      _favoriteModuleIds.remove(id);
+    } else {
+      _favoriteModuleIds.add(id);
+      // Automatically download/install if added to favorite
+      if (!_installedModuleIds.contains(id)) {
+        _installedModuleIds.add(id);
+        await _prefs?.setStringList(_prefKey, _installedModuleIds);
+      }
+    }
+    await _prefs?.setStringList(_favPrefKey, _favoriteModuleIds);
+    notifyListeners();
+  }
+
+  bool isFavorite(String id) {
+    return _favoriteModuleIds.contains(id);
   }
 }

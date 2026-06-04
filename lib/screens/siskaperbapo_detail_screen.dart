@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:majadigi_superapp_frontend/widgets/price_alert_modal.dart';
 import 'package:majadigi_superapp_frontend/widgets/custom_button.dart';
-import 'package:majadigi_superapp_frontend/screens/siskaperbapo_checkout_screen.dart';
 
 class SiskaperbapoDetailScreen extends StatefulWidget {
   final String commodityName;
@@ -322,7 +321,7 @@ class _SiskaperbapoDetailScreenState extends State<SiskaperbapoDetailScreen> {
                   color: const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(14),
                   image: const DecorationImage(
-                    image: NetworkImage("https://placehold.co/64x64"),
+                    image: NetworkImage("https://placehold.co/64x64.png"),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -439,18 +438,15 @@ class _SiskaperbapoDetailScreenState extends State<SiskaperbapoDetailScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: CustomButton(
-                  text: 'Beli Subsidi',
+                  text: 'Lihat Detail',
                   height: 40,
                   fontSize: 13,
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SiskaperbapoCheckoutScreen(
-                          commodityName: name,
-                          price: price,
-                          unit: unit,
-                        ),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Harga $name hari ini: Rp $price/$unit'),
+                        backgroundColor: const Color(0xFF0065FF),
+                        behavior: SnackBarBehavior.floating,
                       ),
                     );
                   },

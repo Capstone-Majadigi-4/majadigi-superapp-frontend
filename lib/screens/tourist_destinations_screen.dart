@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'tourism_main_flow_screen.dart';
 
 class TouristDestinationsScreen extends StatelessWidget {
@@ -54,6 +56,27 @@ class TouristDestinationsScreen extends StatelessWidget {
                           ),
                         ],
                       ),
+                    ),
+                    Consumer<ModuleProvider>(
+                      builder: (context, moduleProvider, _) {
+                        final isFav = moduleProvider.isFavorite('wisata');
+                        return GestureDetector(
+                          onTap: () => moduleProvider.toggleFavorite('wisata'),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFav ? Icons.star_rounded : Icons.star_border_rounded,
+                              color: isFav ? const Color(0xFFF59E0B) : Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     Container(
                       padding: const EdgeInsets.all(8),

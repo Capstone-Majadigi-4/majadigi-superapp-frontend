@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/rsud_provider.dart';
 import 'package:majadigi_superapp_frontend/widgets/room_stat_card.dart';
 import 'package:majadigi_superapp_frontend/widgets/room_availability_table.dart';
 
@@ -10,7 +12,15 @@ class RsudRuangInapScreen extends StatefulWidget {
 }
 
 class _RsudRuangInapScreenState extends State<RsudRuangInapScreen> {
-  final TextEditingController _searchController = TextEditingController(text: 'Kelas 1');
+  final TextEditingController _searchController = TextEditingController(text: '');
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<RsudProvider>(context, listen: false).fetchKamar();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,27 +63,39 @@ class _RsudRuangInapScreenState extends State<RsudRuangInapScreen> {
                     // Horizontal Scroll of Stat Cards
                     SizedBox(
                       height: 120,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: const [
-                          RoomStatCard(
-                            title: 'Total Kamar Rawat',
-                            count: '945',
-                            icon: Icons.business,
-                          ),
-                          SizedBox(width: 16),
-                          RoomStatCard(
-                            title: 'Tersedia',
-                            count: '249',
-                            icon: Icons.check_circle_outline,
-                          ),
-                          SizedBox(width: 16),
-                          RoomStatCard(
-                            title: 'Terisi',
-                            count: '667',
-                            icon: Icons.people_outline,
-                          ),
-                        ],
+                      child: Consumer<RsudProvider>(
+                        builder: (context, provider, child) {
+                          final summary = provider.kamarSummary;
+                          int total = summary?.totalKamar ?? 0;
+                          int tersedia = summary?.tersedia ?? 0;
+                          int terisi = total - tersedia;
+                          if (summary == null && !provider.isLoadingKamar) {
+                            // fallback display
+                            total = 487; tersedia = 174; terisi = 313;
+                          }
+                          return ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              RoomStatCard(
+                                title: 'Total Kamar Rawat',
+                                count: provider.isLoadingKamar ? '...' : '$total',
+                                icon: Icons.business,
+                              ),
+                              const SizedBox(width: 16),
+                              RoomStatCard(
+                                title: 'Tersedia',
+                                count: provider.isLoadingKamar ? '...' : '$tersedia',
+                                icon: Icons.check_circle_outline,
+                              ),
+                              const SizedBox(width: 16),
+                              RoomStatCard(
+                                title: 'Terisi',
+                                count: provider.isLoadingKamar ? '...' : '$terisi',
+                                icon: Icons.people_outline,
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                     

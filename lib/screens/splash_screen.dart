@@ -1,5 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/auth_provider.dart';
+import 'package:majadigi_superapp_frontend/screens/home_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/onBoarding_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/login_screen.dart';
 import 'package:majadigi_superapp_frontend/utils/app_colors.dart';
 import 'package:majadigi_superapp_frontend/widgets/splash_footer.dart';
@@ -15,12 +19,30 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 3), () {
+    _checkAuthAndNavigate();
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    // Show splash screen for at least 2.5 seconds
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted) return;
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final isLoggedIn = await authProvider.checkLoginStatus();
+
+    if (!mounted) return;
+
+    if (isLoggedIn) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
       );
-    });
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
+      );
+    }
   }
 
   @override

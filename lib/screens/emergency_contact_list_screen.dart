@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:majadigi_superapp_frontend/providers/darurat_provider.dart';
+import 'package:majadigi_superapp_frontend/models/darurat_model.dart';
 
-class EmergencyContactListScreen extends StatelessWidget {
+class EmergencyContactListScreen extends StatefulWidget {
   const EmergencyContactListScreen({super.key});
+
+  @override
+  State<EmergencyContactListScreen> createState() => _EmergencyContactListScreenState();
+}
+
+class _EmergencyContactListScreenState extends State<EmergencyContactListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DaruratProvider>().fetchAgencies();
+    });
+  }
 
   Future<void> _makePhoneCall(String phoneNumber) async {
     final Uri launchUri = Uri(
@@ -31,7 +47,7 @@ class EmergencyContactListScreen extends StatelessWidget {
             child: Container(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage("https://placehold.co/449x253/0065FF/FFFFFF?text=Nomor+Darurat"),
+                  image: NetworkImage("https://placehold.co/449x253/0065FF/FFFFFF.png?text=Nomor+Darurat"),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -79,63 +95,43 @@ class EmergencyContactListScreen extends StatelessWidget {
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
-                child: ListView(
-                  padding: const EdgeInsets.all(24),
-                  children: [
-                    // Warning Banner
-                    _buildWarningBanner(),
-                    const SizedBox(height: 24),
+                child: Consumer<DaruratProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    
+                    final agencies = provider.agencies;
 
-                    // List of Emergency Cards
-                    _buildEmergencyCard(
-                      title: 'Call Center 112',
-                      subtitle: 'Layanan Darurat Terpadu Jawa Timur',
-                      number: '112',
-                      onTap: () => _makePhoneCall('112'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildEmergencyCard(
-                      title: 'Polisi',
-                      subtitle: 'Kepolisian Negara RI',
-                      number: '110',
-                      onTap: () => _makePhoneCall('110'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildEmergencyCard(
-                      title: 'Ambulans/Medis',
-                      subtitle: 'Layanan Kesehatan Darurat',
-                      number: '119',
-                      onTap: () => _makePhoneCall('119'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildEmergencyCard(
-                      title: 'Pemadam Kebakaran',
-                      subtitle: 'Dinas Pemadam Kebakaran',
-                      number: '113',
-                      onTap: () => _makePhoneCall('113'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildEmergencyCard(
-                      title: 'SAR',
-                      subtitle: 'Search and Rescue Indonesia',
-                      number: '115',
-                      onTap: () => _makePhoneCall('115'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildEmergencyCard(
-                      title: 'PLN',
-                      subtitle: 'Gangguan Listrik',
-                      number: '123',
-                      onTap: () => _makePhoneCall('123'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildEmergencyCard(
-                      title: 'PDAM',
-                      subtitle: 'Gangguan Air PDAM',
-                      number: '1500651',
-                      onTap: () => _makePhoneCall('1500651'),
-                    ),
-                  ],
+                    return ListView(
+                      padding: const EdgeInsets.all(24),
+                      children: [
+                        // Warning Banner
+                        _buildWarningBanner(),
+                        const SizedBox(height: 24),
+
+                        if (agencies.isEmpty)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24.0),
+                              child: Text('Kontak darurat tidak tersedia.'),
+                            ),
+                          )
+                        else
+                          ...agencies.map((agency) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildEmergencyCard(
+                                title: agency.title,
+                                subtitle: '${agency.subtitle} (${agency.distance})',
+                                number: agency.number,
+                                onTap: () => _makePhoneCall(agency.number),
+                              ),
+                            );
+                          }).toList(),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

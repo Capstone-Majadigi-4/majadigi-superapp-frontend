@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/transjatim_provider.dart';
 import 'package:majadigi_superapp_frontend/widgets/custom_button.dart';
 import 'package:majadigi_superapp_frontend/widgets/payment_success_dialog.dart';
 import 'transjatim_payment_success_screen.dart';
 
 class TransjatimPaymentScreen extends StatefulWidget {
+  final String corridorId;
   final String amount;
   final String corridorName;
 
   const TransjatimPaymentScreen({
     super.key,
+    required this.corridorId,
     required this.amount,
     required this.corridorName,
   });
@@ -166,20 +170,49 @@ class _TransjatimPaymentScreenState extends State<TransjatimPaymentScreen> {
                 const SizedBox(height: 32),
                 
                 // Action Buttons
-                CustomButton(
+                 CustomButton(
                   text: 'Unduh QR Code',
                   icon: Icons.download_rounded,
                   backgroundColor: const Color(0xFF155DFC),
                   height: 48,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  onPressed: () {
-                    // Logic to download or confirm payment
-                    showPaymentSuccessDialog(
-                      context,
-                      amount: widget.amount,
-                      nextScreen: const TransjatimPaymentSuccessScreen(),
+                  onPressed: () async {
+                    // Show loading indicator
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
                     );
+
+                    final res = await context.read<TransJatimProvider>().purchaseTicket(widget.corridorId, 1);
+
+                    // Dismiss loading indicator
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+
+                    if (res != null) {
+                      if (context.mounted) {
+                        showPaymentSuccessDialog(
+                          context,
+                          amount: widget.amount,
+                          nextScreen: const TransjatimPaymentSuccessScreen(),
+                        );
+                      }
+                    } else {
+                      if (context.mounted) {
+                        final provider = context.read<TransJatimProvider>();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(provider.errorMessage ?? 'Gagal membeli tiket'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
                   },
                 ),
                 const SizedBox(height: 12),

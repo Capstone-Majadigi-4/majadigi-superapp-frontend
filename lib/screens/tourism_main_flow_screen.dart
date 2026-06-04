@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:majadigi_superapp_frontend/widgets/destination_detail_modal.dart';
 import 'package:majadigi_superapp_frontend/screens/bus_route_detail_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/my_itinerary_screen.dart';
+import 'package:majadigi_superapp_frontend/providers/wisata_provider.dart';
 
 class TourismMainFlowScreen extends StatefulWidget {
   const TourismMainFlowScreen({super.key});
@@ -14,7 +17,20 @@ class _TourismMainFlowScreenState extends State<TourismMainFlowScreen> {
   final List<String> categories = ['Semua', 'Alam', 'Pantai', 'Keluarga'];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<WisataProvider>(context, listen: false).fetchDestinations();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final wisataProvider = Provider.of<WisataProvider>(context);
+    final filteredDestinations = wisataProvider.destinations.where((d) {
+      return selectedCategory == 'Semua' || d.category == selectedCategory;
+    }).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFF0065FF),
       body: Stack(
@@ -103,16 +119,45 @@ class _TourismMainFlowScreenState extends State<TourismMainFlowScreen> {
                         const SizedBox(height: 24),
                         _buildCategorySelector(),
                         const SizedBox(height: 24),
-                        _buildDestinationCard(
-                          title: 'Gunung Bromo',
-                          description: 'Gunung berapi aktif dengan pemandangan sunrise spektakuler dan lautan pasir yang menakjubkan.',
-                          imageUrl: 'https://images.unsplash.com/photo-1536704689578-8eff5322b70b?q=80&w=1000&auto=format&fit=crop',
-                          duration: '4-5 jam',
-                          openHours: '03:00 - 17:00 WIB',
-                          route: 'Koridor Probolinggo • Terminal Probolinggo',
-                          distance: '15 km',
-                          price: 'Rp 10.000',
-                        ),
+                        if (wisataProvider.isLoading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else if (filteredDestinations.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: Center(
+                              child: Text(
+                                'Tidak ada destinasi ditemukan',
+                                style: TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontFamily: 'Inter',
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: filteredDestinations.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 16),
+                            itemBuilder: (context, index) {
+                              final dest = filteredDestinations[index];
+                              return _buildDestinationCard(
+                                title: dest.title,
+                                description: dest.description,
+                                imageUrl: dest.imageUrl,
+                                duration: dest.duration,
+                                openHours: dest.openHours,
+                                route: dest.route,
+                                distance: dest.distance,
+                                price: dest.price,
+                              );
+                            },
+                          ),
                         const SizedBox(height: 80), // Spacing for fixed button
                       ],
                     ),
@@ -236,7 +281,12 @@ class _TourismMainFlowScreenState extends State<TourismMainFlowScreen> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyItineraryScreen()),
+                );
+              },
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
               child: const Text(
                 'Lihat Itinerary Saya →',

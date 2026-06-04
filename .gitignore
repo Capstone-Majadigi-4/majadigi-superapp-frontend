@@ -43,3 +43,30 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment files
+.env
+.env.*
+
+# Local/secret properties
+/android/local.properties
+/ios/Flutter/Flutter.podspec
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+
+# Keystore / credentials
+*.jks
+*.keystore
+*.p12
+*.p8
+*.pem
+*.key
+*.der
+
+# Local development test scripts & error logs
+test_api.ps1
+test_auth_api.ps1
+build_errors.txt
+
+# VS Code configurations
+.vscode/

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
@@ -5,19 +6,17 @@ import 'package:permission_handler/permission_handler.dart';
 
 // Screens
 import 'package:majadigi_superapp_frontend/screens/bapenda_screen.dart';
-import 'package:majadigi_superapp_frontend/screens/emergency_numbers_screen.dart';
-import 'package:majadigi_superapp_frontend/screens/tourist_destinations_screen.dart';
-import 'package:majadigi_superapp_frontend/screens/islamic_center_screen.dart';
-import 'package:majadigi_superapp_frontend/screens/sinaker_screen.dart';
-import 'package:majadigi_superapp_frontend/screens/tbc_screening_screen.dart';
-import 'package:majadigi_superapp_frontend/screens/siskaperbapo_screen.dart';
-import 'package:majadigi_superapp_frontend/screens/rsud_saiful_anwar_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/profile_screen.dart';
 
 // Provider & Models
 import 'package:provider/provider.dart';
 import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
+import 'package:majadigi_superapp_frontend/providers/auth_provider.dart';
+import 'package:majadigi_superapp_frontend/providers/dashboard_provider.dart';
+import 'package:majadigi_superapp_frontend/providers/darurat_provider.dart';
 import 'package:majadigi_superapp_frontend/models/service_module.dart';
 import 'package:majadigi_superapp_frontend/screens/module_center_screen.dart';
+import 'package:majadigi_superapp_frontend/widgets/shimmer.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +29,43 @@ class _HomeScreenState extends State<HomeScreen> {
   // STATE: Menyimpan tab mana yang sedang aktif
   // 0 = Favorit, 1 = Semua Layanan, 2 = Nawa Bhakti
   int _selectedTabIndex = 0; 
+
+  // Bottom Navigation Index (0 = Home, 1 = Layanan, 2 = Favorit, 3 = Profile)
+  int _bottomNavIndex = 0;
+
+  // Slider Banner
+  Timer? _bannerTimer;
+  final PageController _bannerPageController = PageController();
+  int _currentBannerPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DashboardProvider>().fetchBapokTicker();
+      context.read<AuthProvider>().fetchUserProfile();
+    });
+
+    // Auto-play timer for sliding banner
+    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_bannerPageController.hasClients) {
+        final nextPage = (_currentBannerPage + 1) % 3;
+        _bannerPageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  } 
+
+  @override
+  void dispose() {
+    _bannerTimer?.cancel();
+    _bannerPageController.dispose();
+    super.dispose();
+  }
+
 
   // ===================== LOGIKA DARURAT (SOS) =====================
   Future<void> _handleEmergencyCall(BuildContext context, String title, String number) async {
@@ -50,6 +86,11 @@ class _HomeScreenState extends State<HomeScreen> {
     String userNik = "3578000000000001"; 
     String gpsCoords = position != null ? "${position.latitude},${position.longitude}" : "Unknown";
     debugPrint("EMERGENCY PAYLOAD SENT: NIK: $userNik, LOC: $gpsCoords, TO: $title ($number)");
+
+    // Call DaruratProvider API integration
+    if (context.mounted) {
+      context.read<DaruratProvider>().triggerPanicButton(title, number, gpsCoords);
+    }
 
     final Uri url = Uri.parse('tel:$number');
     if (await canLaunchUrl(url)) {
@@ -173,6 +214,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ===================== LOGIKA PREVIEW LAYANAN =====================
   void _showModulePreviewDialog(BuildContext context, ServiceModule module) {
+    bool isDownloading = false;
+    double progress = 0.0;
+    String downloadText = 'Menyiapkan unduhan...';
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -320,31 +365,139 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     
                     const SizedBox(height: 24),
-                    // Action Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => module.destinationScreen));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0085FF),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'Lanjutkan ke ${module.title}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                    Consumer<ModuleProvider>(
+                      builder: (context, provider, child) {
+                        return StatefulBuilder(
+                          builder: (context, setDialogState) {
+                            final isInstalled = provider.isInstalled(module.id);
+                            
+                            if (isInstalled) {
+                              return SizedBox(
+                                width: double.infinity,
+                                height: 56,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) => module.destinationScreen));
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0085FF),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'Lanjutkan ke ${module.title}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                            
+                            if (isDownloading) {
+                              return Column(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: LinearProgressIndicator(
+                                      value: progress,
+                                      backgroundColor: const Color(0xFFE2E8F0),
+                                      color: const Color(0xFF0085FF),
+                                      minHeight: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        downloadText,
+                                        style: const TextStyle(
+                                          color: Color(0xFF64748B),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${(progress * 100).toInt()}%',
+                                        style: const TextStyle(
+                                          color: Color(0xFF0085FF),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            }
+                            
+                            return SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setDialogState(() {
+                                    isDownloading = true;
+                                    progress = 0.0;
+                                    downloadText = 'Mengunduh data...';
+                                  });
+                                  
+                                  Timer.periodic(const Duration(milliseconds: 150), (timer) {
+                                    if (!context.mounted) {
+                                      timer.cancel();
+                                      return;
+                                    }
+                                    
+                                    setDialogState(() {
+                                      progress += 0.08;
+                                      if (progress >= 0.4 && progress < 0.8) {
+                                        downloadText = 'Menginstal modul...';
+                                      } else if (progress >= 0.8 && progress < 1.0) {
+                                        downloadText = 'Menyelesaikan pemasangan...';
+                                      }
+                                      
+                                      if (progress >= 1.0) {
+                                        progress = 1.0;
+                                        isDownloading = false;
+                                        timer.cancel();
+                                        provider.installModule(module.id);
+                                      }
+                                    });
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF10B981),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.download_rounded, color: Colors.white),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Unduh Layanan (${module.title})',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -396,8 +549,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildBottomNavItem(Icons.home_outlined, 'Home', true),
-                    _buildBottomNavItem(Icons.grid_view_rounded, 'Layanan', false),
+                    _buildBottomNavItem(Icons.home_outlined, 'Home', _bottomNavIndex == 0, 0),
+                    _buildBottomNavItem(Icons.grid_view_rounded, 'Layanan', _bottomNavIndex == 1, 1),
                   ],
                 ),
               ),
@@ -407,8 +560,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildBottomNavItem(Icons.bookmark_border_rounded, 'Favorit', false),
-                    _buildBottomNavItem(Icons.person_outline_rounded, 'Profile', false),
+                    _buildBottomNavItem(Icons.bookmark_border_rounded, 'Favorit', _bottomNavIndex == 2, 2),
+                    _buildBottomNavItem(Icons.person_outline_rounded, 'Profile', _bottomNavIndex == 3, 3),
                   ],
                 ),
               ),
@@ -417,7 +570,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       
-      body: SingleChildScrollView(
+      body: IndexedStack(
+        index: _bottomNavIndex,
+        children: [
+          SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Stack(
           children: [
@@ -464,28 +620,43 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(width: 12),
                         // Sapaan
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Selamat pagi',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontFamily: 'Inter',
-                                ),
-                              ),
-                              Text(
-                                'Pengunjung kelompok 4',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Inter',
-                                ),
-                              ),
-                            ],
+                        Expanded(
+                          child: Consumer<AuthProvider>(
+                            builder: (context, auth, _) {
+                              if (auth.isLoading && auth.user == null) {
+                                return const Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Shimmer.rectangular(height: 10, width: 80),
+                                    SizedBox(height: 6),
+                                    Shimmer.rectangular(height: 16, width: 140),
+                                  ],
+                                );
+                              }
+                              final user = auth.user;
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Selamat pagi',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                      fontFamily: 'Inter',
+                                    ),
+                                  ),
+                                  Text(
+                                    user?.nama ?? 'Pengunjung kelompok 4',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Inter',
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                         // Notifikasi
@@ -549,54 +720,55 @@ class _HomeScreenState extends State<HomeScreen> {
                   
                   const SizedBox(height: 30),
 
-                  // 3. Floating Banner Layanan Terpadu
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0078FF), Color(0xFF0046B2)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF0046B2).withOpacity(0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          )
-                        ]
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Layanan Terpadu', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                              const SizedBox(height: 4),
-                              const Text('10 Layanan', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              const Text('Untuk Masyarakat Jawa Timur', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                              const SizedBox(height: 16),
-                              Row( // Dots
-                                children: [
-                                  Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
-                                  const SizedBox(width: 4),
-                                  Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
-                                  const SizedBox(width: 4),
-                                  Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white54, shape: BoxShape.circle)),
-                                ]
-                              )
-                            ]
+                  // 3. Floating Banner Layanan Terpadu (Slider/Carousel)
+                  SizedBox(
+                    height: 145,
+                    child: PageView(
+                      controller: _bannerPageController,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentBannerPage = index;
+                        });
+                      },
+                      children: [
+                        _buildBannerSlide(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0078FF), Color(0xFF0046B2)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
                           ),
-                          const Icon(Icons.account_balance, color: Colors.white, size: 70) 
-                        ]
-                      )
-                    )
+                          title: 'Layanan Terpadu',
+                          subtitle: '10 Layanan',
+                          desc: 'Untuk Masyarakat Jawa Timur',
+                          icon: Icons.account_balance,
+                          pageIndex: 0,
+                        ),
+                        _buildBannerSlide(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          title: 'Informasi Wisata',
+                          subtitle: 'Destinasi Favorit',
+                          desc: 'Jelajahi keindahan Jawa Timur',
+                          icon: Icons.landscape,
+                          pageIndex: 1,
+                        ),
+                        _buildBannerSlide(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          title: 'Darurat & Siaga',
+                          subtitle: 'Hubungi Bantuan',
+                          desc: 'Respon cepat darurat 24 jam',
+                          icon: Icons.phone_in_talk,
+                          pageIndex: 2,
+                        ),
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -701,12 +873,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                   _buildPerkiraanCuaca(),
 
-                  const SizedBox(height: 80), // Extra space for FAB
+                  const SizedBox(height: 120), // Extra space for FAB and Navbar
                 ],
               ),
             ),
           ],
         ),
+      ),
+          const ModuleCenterScreen(showBackButton: false),
+          _buildFavoritTabContent(),
+          const ProfileScreen(showBackButton: false),
+        ],
       ),
     );
   }
@@ -1071,9 +1248,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ===================== KONTEN TAB 0: FAVORIT =====================
   Widget _buildFavoritContent(ModuleProvider provider) {
-    final installedModules = provider.installedModules;
+    final favoriteModules = provider.favoriteModules;
     
-    if (installedModules.isEmpty) {
+    if (favoriteModules.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 24),
@@ -1094,10 +1271,10 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisSpacing: 12,
         childAspectRatio: 0.75, 
       ),
-      itemCount: installedModules.length + 1, // +1 for the Add button
+      itemCount: favoriteModules.length + 1, // +1 for the Add button
       itemBuilder: (context, index) {
-        if (index < installedModules.length) {
-          final module = installedModules[index];
+        if (index < favoriteModules.length) {
+          final module = favoriteModules[index];
           return GestureDetector(
             onTap: () {
               _showModulePreviewDialog(context, module);
@@ -1196,7 +1373,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: modules.length,
                     itemBuilder: (context, idx) {
                       final module = modules[idx];
-                      final isInstalled = provider.isInstalled(module.id);
+                      final isFavorite = provider.isFavorite(module.id);
                       
                       return GestureDetector(
                         onTap: () {
@@ -1265,17 +1442,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 right: -4,
                                 child: GestureDetector(
                                   onTap: () {
-                                    if (isInstalled) {
-                                      provider.uninstallModule(module.id);
-                                    } else {
-                                      provider.installModule(module.id);
-                                    }
+                                    provider.toggleFavorite(module.id);
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(4),
                                     child: Icon(
-                                      isInstalled ? Icons.star_rounded : Icons.star_border_rounded,
-                                      color: isInstalled ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
+                                      isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+                                      color: isFavorite ? const Color(0xFFF59E0B) : const Color(0xFFCBD5E1),
                                       size: 28,
                                     ),
                                   ),
@@ -1453,81 +1626,307 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ===================== HELPER WIDGETS =====================
-
-  Widget _buildSmartNotification() {
+  Widget _buildBannerSlide({
+    required Gradient gradient,
+    required String title,
+    required String subtitle,
+    required String desc,
+    required IconData icon,
+    required int pageIndex,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFFFEF2F2), 
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFECACA)),
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: (gradient as LinearGradient).colors.last.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ]
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEE2E2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.warning_rounded, color: Color(0xFFEF4444)),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Jatuh Tempo Pajak',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF991B1B),
-                      fontSize: 14,
-                      fontFamily: 'Inter',
-                    ),
-                  ),
+                  Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Pajak PBB Anda (NOP: 3573...) akan jatuh tempo dalam 3 hari. Segera lakukan pembayaran.',
-                    style: TextStyle(
-                      color: Color(0xFF7F1D1D),
-                      fontSize: 12,
-                      height: 1.4,
-                      fontFamily: 'Inter',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Arahkan langsung ke Bapenda Screen
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const BapendaScreen()));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF4444),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 36),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text('Bayar Sekarang', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ),
-                ],
+                  Text(subtitle, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(desc, style: const TextStyle(color: Colors.white70, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: List.generate(3, (dotIndex) {
+                      final isActive = dotIndex == pageIndex;
+                      return Container(
+                        margin: const EdgeInsets.only(right: 4),
+                        width: isActive ? 16 : 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: isActive ? Colors.white : Colors.white54,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    }),
+                  )
+                ]
               ),
             ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () {}, // Close alert placeholder
-              child: const Icon(Icons.close, size: 16, color: Color(0xFF991B1B)),
-            ),
-          ],
-        ),
+            const SizedBox(width: 10),
+            Icon(icon, color: Colors.white, size: 70) 
+          ]
+        )
       ),
+    );
+  }
+
+  Widget _buildSmartNotification() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Tax Warning
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF2F2), 
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFECACA)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.warning_rounded, color: Color(0xFFEF4444)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Jatuh Tempo Pajak',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF991B1B),
+                          fontSize: 14,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Pajak PBB Anda (NOP: 3573...) akan jatuh tempo dalam 3 hari. Segera lakukan pembayaran.',
+                        style: TextStyle(
+                          color: Color(0xFF7F1D1D),
+                          fontSize: 12,
+                          height: 1.4,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Arahkan langsung ke Bapenda Screen
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const BapendaScreen()));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF4444),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 36),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text('Bayar Sekarang', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {}, // Close alert placeholder
+                  child: const Icon(Icons.close, size: 16, color: Color(0xFF991B1B)),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Bapok Ticker Smart Widget (Fase 2)
+        Consumer<DashboardProvider>(
+          builder: (context, provider, _) {
+            if (provider.isLoading) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Shimmer.circular(width: 20, height: 20),
+                          const SizedBox(width: 8),
+                          const Shimmer.rectangular(height: 12, width: 140),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(3, (index) => Shimmer.rounded(height: 60, width: 90, borderRadius: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            if (provider.tickerData.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.grey.shade100),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.trending_up_rounded, color: Color(0xFF2563EB), size: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Harga Komoditas (Bapok)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF475569),
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 80,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: provider.tickerData.length,
+                        itemBuilder: (context, index) {
+                          final item = provider.tickerData[index];
+                          final isUp = (item.perubahanPersen ?? 0) >= 0;
+                          
+                          return Container(
+                            width: 120,
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  item.nama,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const Spacer(),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Rp${item.hargaRataRata.toInt()}',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          isUp ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                                          color: isUp ? const Color(0xFF16A34A) : const Color(0xFFEF4444),
+                                          size: 8,
+                                        ),
+                                        Text(
+                                          '${item.perubahanPersen?.abs()}%',
+                                          style: TextStyle(
+                                            fontSize: 8,
+                                            fontWeight: FontWeight.bold,
+                                            color: isUp ? const Color(0xFF16A34A) : const Color(0xFFEF4444),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -1593,12 +1992,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBottomNavItem(IconData icon, String label, bool isActive) {
+  Widget _buildBottomNavItem(IconData icon, String label, bool isActive, int index) {
     final color = isActive ? const Color(0xFF0065FF) : const Color(0xFF64748B);
     return MaterialButton(
       minWidth: 40,
       padding: EdgeInsets.zero,
-      onPressed: () {},
+      onPressed: () {
+        setState(() {
+          _bottomNavIndex = index;
+        });
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -1613,6 +2016,141 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFavoritTabContent() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F5F9),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF0065FF),
+        title: const Text(
+          'Layanan Favorit',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Inter',
+          ),
+        ),
+        elevation: 0,
+        automaticallyImplyLeading: false,
+      ),
+      body: Consumer<ModuleProvider>(
+        builder: (context, provider, child) {
+          final favoriteModules = provider.favoriteModules;
+          if (favoriteModules.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.bookmark_border_rounded, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Belum Ada Layanan Favorit',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[600],
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Unduh & tambahkan layanan ke favorit Anda.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _bottomNavIndex = 1; // Pindah ke Layanan (App Center)
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0065FF),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Cari Layanan'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return GridView.builder(
+            padding: const EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 120),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 20,
+              crossAxisSpacing: 20,
+              childAspectRatio: 0.85,
+            ),
+            itemCount: favoriteModules.length,
+            itemBuilder: (context, index) {
+              final module = favoriteModules[index];
+              return GestureDetector(
+                onTap: () {
+                  _showModulePreviewDialog(context, module);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: module.bgColor.withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          module.emoji,
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          module.title,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                            fontFamily: 'Inter',
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

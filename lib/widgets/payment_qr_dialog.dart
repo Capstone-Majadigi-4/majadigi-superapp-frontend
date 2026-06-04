@@ -5,11 +5,15 @@ import 'package:majadigi_superapp_frontend/widgets/payment_success_dialog.dart';
 class PaymentQrDialog extends StatelessWidget {
   final String amount;
   final String agencyName;
+  final VoidCallback? onConfirm;
+  final Widget? nextScreen;
 
   const PaymentQrDialog({
     super.key,
     required this.amount,
     required this.agencyName,
+    this.onConfirm,
+    this.nextScreen,
   });
 
   @override
@@ -195,8 +199,11 @@ class PaymentQrDialog extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     onPressed: () {
+                      if (onConfirm != null) {
+                        onConfirm!();
+                      }
                       Navigator.pop(context); // Close QR dialog
-                      showPaymentSuccessDialog(context, amount: amount);
+                      showPaymentSuccessDialog(context, amount: amount, nextScreen: nextScreen);
                     },
                   ),
                   const SizedBox(height: 12),
@@ -224,13 +231,21 @@ class PaymentQrDialog extends StatelessWidget {
 }
 
 // Function to show the dialog
-void showPaymentQrDialog(BuildContext context, {required String amount, required String agencyName}) {
+void showPaymentQrDialog(
+  BuildContext context, {
+  required String amount,
+  required String agencyName,
+  VoidCallback? onConfirm,
+  Widget? nextScreen,
+}) {
   showDialog(
     context: context,
     barrierDismissible: true,
     builder: (context) => PaymentQrDialog(
       amount: amount,
       agencyName: agencyName,
+      onConfirm: onConfirm,
+      nextScreen: nextScreen,
     ),
   );
 }

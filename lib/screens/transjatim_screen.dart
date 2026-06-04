@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'transjatim_tracking_screen.dart';
 import 'transjatim_ticket_screen.dart';
 
@@ -66,6 +68,27 @@ class TransjatimScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    Consumer<ModuleProvider>(
+                      builder: (context, moduleProvider, _) {
+                        final isFav = moduleProvider.isFavorite('transjatim');
+                        return GestureDetector(
+                          onTap: () => moduleProvider.toggleFavorite('transjatim'),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFav ? Icons.star_rounded : Icons.star_border_rounded,
+                              color: isFav ? const Color(0xFFF59E0B) : Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -103,7 +126,7 @@ class TransjatimScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         image: const DecorationImage(
-                          image: NetworkImage('https://placehold.co/800x400/0065FF/FFFFFF?text=Bus+Transjatim'),
+                          image: NetworkImage('https://placehold.co/800x400/0065FF/FFFFFF.png?text=Bus+Transjatim'),
                           fit: BoxFit.cover,
                         ),
                         boxShadow: [

@@ -4,7 +4,8 @@ import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:majadigi_superapp_frontend/models/service_module.dart';
 
 class ModuleCenterScreen extends StatelessWidget {
-  const ModuleCenterScreen({super.key});
+  final bool showBackButton;
+  const ModuleCenterScreen({super.key, this.showBackButton = true});
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +21,13 @@ class ModuleCenterScreen extends StatelessWidget {
             fontFamily: 'Inter',
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
+        leading: showBackButton
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         elevation: 0,
       ),
       body: Consumer<ModuleProvider>(
@@ -40,7 +44,7 @@ class ModuleCenterScreen extends StatelessWidget {
           final categories = categorizedModules.keys.toList()..sort();
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 120),
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
@@ -94,7 +98,7 @@ class ModuleCenterScreen extends StatelessWidget {
                           ),
                         ),
                         subtitle: Text(
-                          isInstalled ? 'Terpasang di Dashboard' : 'Tersedia untuk diunduh',
+                          isInstalled ? 'Terunduh di Dashboard' : 'Tersedia untuk diunduh',
                           style: TextStyle(
                             color: isInstalled ? const Color(0xFF0065FF) : const Color(0xFF64748B),
                             fontSize: 12,
@@ -120,7 +124,7 @@ class ModuleCenterScreen extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            isInstalled ? 'Hapus' : 'Pasang',
+                            isInstalled ? 'Hapus' : 'Unduh',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                           ),
                         ),

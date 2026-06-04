@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/auth_provider.dart';
 import 'package:majadigi_superapp_frontend/screens/login_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/onBoarding_screen.dart';
 import 'package:majadigi_superapp_frontend/widgets/register_step_one.dart';
 import 'package:majadigi_superapp_frontend/widgets/register_step_two.dart';
 
@@ -12,6 +15,97 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   int _currentStep = 0;
+
+  // Form Keys
+  final GlobalKey<FormState> _stepOneFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _stepTwoFormKey = GlobalKey<FormState>();
+
+  // Step 1 Controllers
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+
+  // Step 2 Controllers
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _nikController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _genderController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    _nikController.dispose();
+    _dateController.dispose();
+    _genderController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _handleSubmit() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+    final fullName = lastName.isNotEmpty ? '$firstName $lastName' : firstName;
+    
+    final noHp = _phoneController.text.trim();
+    final nik = _nikController.text.trim();
+    final password = _passwordController.text;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0065FF)),
+        ),
+      ),
+    );
+
+    final success = await authProvider.register(
+      nik: nik,
+      password: password,
+      nama: fullName,
+      noHp: noHp,
+    );
+
+    if (mounted) {
+      Navigator.pop(context); // Dismiss loading dialog
+    }
+
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Registrasi berhasil! Silakan login.'),
+            backgroundColor: const Color(0xFF00C950),
+          ),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
+          (route) => false,
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.errorMessage ?? 'Registrasi gagal. Coba lagi.'),
+            backgroundColor: const Color(0xFFEF4444),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -194,8 +288,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         // Step Content
                         _currentStep == 0
-                            ? RegisterStepOne(onNext: () => setState(() => _currentStep = 1))
-                            : RegisterStepTwo(onBack: () => setState(() => _currentStep = 0)),
+                            ? RegisterStepOne(
+                                onNext: () => setState(() => _currentStep = 1),
+                                formKey: _stepOneFormKey,
+                                firstNameController: _firstNameController,
+                                lastNameController: _lastNameController,
+                                phoneController: _phoneController,
+                                emailController: _emailController,
+                              )
+                            : RegisterStepTwo(
+                                onBack: () => setState(() => _currentStep = 0),
+                                formKey: _stepTwoFormKey,
+                                addressController: _addressController,
+                                nikController: _nikController,
+                                dateController: _dateController,
+                                genderController: _genderController,
+                                passwordController: _passwordController,
+                                confirmPasswordController: _confirmPasswordController,
+                                onSubmit: _handleSubmit,
+                              ),
 
                         const SizedBox(height: 40),
                       ],

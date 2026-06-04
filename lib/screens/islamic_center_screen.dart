@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'islamic_center_details_screen.dart';
 
 class IslamicCenterScreen extends StatelessWidget {
@@ -56,6 +58,27 @@ class IslamicCenterScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    Consumer<ModuleProvider>(
+                      builder: (context, moduleProvider, _) {
+                        final isFav = moduleProvider.isFavorite('islamic_center');
+                        return GestureDetector(
+                          onTap: () => moduleProvider.toggleFavorite('islamic_center'),
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFav ? Icons.star_rounded : Icons.star_border_rounded,
+                              color: isFav ? const Color(0xFFF59E0B) : Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -93,7 +116,7 @@ class IslamicCenterScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         image: const DecorationImage(
-                          image: NetworkImage('https://images.unsplash.com/photo-1564683214964-b0a373a0a383?auto=format&fit=crop&q=80&w=800'),
+                          image: NetworkImage('https://images.unsplash.com/photo-1598188306155-25e400eb5078?auto=format&fit=crop&q=80&w=800'),
                           fit: BoxFit.cover,
                         ),
                         boxShadow: [

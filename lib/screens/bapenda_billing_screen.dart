@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/bapenda_provider.dart';
+import 'package:majadigi_superapp_frontend/models/bapenda_model.dart';
 import 'package:majadigi_superapp_frontend/widgets/custom_button.dart';
 import 'package:majadigi_superapp_frontend/widgets/payment_qr_dialog.dart';
+import 'payment_completed_screen.dart';
 
-class BapendaBillingScreen extends StatelessWidget {
+class BapendaBillingScreen extends StatefulWidget {
   final String platNomor;
   final String merk;
 
@@ -13,9 +17,37 @@ class BapendaBillingScreen extends StatelessWidget {
   });
 
   @override
+  State<BapendaBillingScreen> createState() => _BapendaBillingScreenState();
+}
+
+class _BapendaBillingScreenState extends State<BapendaBillingScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<BapendaProvider>(context, listen: false);
+      if (provider.currentBill == null || provider.currentBill!.platNomor != widget.platNomor) {
+        provider.fetchBillDetail(widget.platNomor);
+      }
+    });
+  }
+
+  String _formatMoney(double amount) {
+    final str = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(str[i]);
+    }
+    return buffer.toString();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0065FF), // Header Biru
+      backgroundColor: const Color(0xFF0065FF),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -34,54 +66,86 @@ class BapendaBillingScreen extends StatelessWidget {
                     topRight: Radius.circular(30),
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(24),
-                        physics: const BouncingScrollPhysics(),
-                        child: Column(
-                          children: [
-                            // Card Detail Kendaraan
-                            _buildVehicleDetailCard(),
-                            
-                            const SizedBox(height: 24),
-                            
-                            // Card Rincian Biaya
-                            _buildBillingDetailCard(),
-                          ],
+                child: Consumer<BapendaProvider>(
+                  builder: (context, provider, child) {
+                    if (provider.isLoadingBill) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0065FF)),
                         ),
-                      ),
-                    ),
-                    
-                    // Bagian Bawah (Bottom Navigation / Footer)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            offset: const Offset(0, -4),
-                            blurRadius: 10,
+                      );
+                    }
+
+                    final bill = provider.currentBill;
+                    if (bill == null) {
+                      return const Center(
+                        child: Text('Data tagihan tidak ditemukan'),
+                      );
+                    }
+
+                    final isPaid = bill.statusBayar.toLowerCase() == 'lunas';
+
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(24),
+                            physics: const BouncingScrollPhysics(),
+                            child: Column(
+                              children: [
+                                // Card Detail Kendaraan
+                                _buildVehicleDetailCard(bill),
+                                
+                                const SizedBox(height: 24),
+                                
+                                // Card Rincian Biaya
+                                _buildBillingDetailCard(bill),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                      child: SafeArea(
-                        top: false,
-                        child: CustomButton(
-                          text: 'Bayar Sekarang',
-                          onPressed: () {
-                            showPaymentQrDialog(
-                              context,
-                              amount: 'Rp 185.000',
-                              agencyName: 'Bapenda Jatim',
-                            );
-                          },
                         ),
-                      ),
-                    ),
-                  ],
+                        
+                        // Bagian Bawah (Bottom Navigation / Footer)
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                offset: const Offset(0, -4),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                          child: SafeArea(
+                            top: false,
+                            child: CustomButton(
+                              text: isPaid ? 'Pembayaran Selesai' : 'Bayar Sekarang',
+                              backgroundColor: isPaid ? const Color(0xFF10B981) : const Color(0xFF0065FF),
+                              onPressed: isPaid 
+                                  ? () => Navigator.pop(context, true)
+                                  : () {
+                                      showPaymentQrDialog(
+                                        context,
+                                        amount: 'Rp ${_formatMoney(bill.totalTagihan)}',
+                                        agencyName: 'Bapenda Jatim',
+                                        onConfirm: () {
+                                          provider.payVehicleBill(widget.platNomor);
+                                        },
+                                        nextScreen: PaymentCompletedScreen(
+                                          amount: 'Rp ${_formatMoney(bill.totalTagihan)}',
+                                          platNomor: widget.platNomor,
+                                          vehicleInfo: '${bill.merk} / ${bill.tipe}',
+                                        ),
+                                      );
+                                    },
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -122,7 +186,7 @@ class BapendaBillingScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  platNomor,
+                  widget.platNomor,
                   style: const TextStyle(
                     color: Color(0xFFDBEAFE),
                     fontSize: 14,
@@ -138,7 +202,9 @@ class BapendaBillingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVehicleDetailCard() {
+  Widget _buildVehicleDetailCard(BapendaBillDetail bill) {
+    final isPaid = bill.statusBayar.toLowerCase() == 'lunas';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -159,7 +225,7 @@ class BapendaBillingScreen extends StatelessWidget {
           Row(
             children: [
               Text(
-                platNomor,
+                widget.platNomor,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -172,13 +238,13 @@ class BapendaBillingScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: isPaid ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  'Segera Bayar',
+                child: Text(
+                  isPaid ? 'Lunas' : 'Segera Bayar',
                   style: TextStyle(
-                    color: Color(0xFFEF4444),
+                    color: isPaid ? const Color(0xFF047857) : const Color(0xFFEF4444),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Inter',
@@ -189,7 +255,7 @@ class BapendaBillingScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            merk,
+            '${bill.merk} / ${bill.tipe}',
             style: const TextStyle(
               fontSize: 14,
               color: Color(0xFF6A7282),
@@ -202,33 +268,41 @@ class BapendaBillingScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF9C3).withValues(alpha: 0.4), // Very light yellow
+              color: isPaid 
+                  ? const Color(0xFFECFDF5) 
+                  : const Color(0xFFFEF9C3).withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFEF08A)), // Yellow border
+              border: Border.all(
+                color: isPaid ? const Color(0xFFA7F3D0) : const Color(0xFFFEF08A),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today_rounded, color: Color(0xFFCA8A04), size: 20), // Golden yellow icon
+                Icon(
+                  isPaid ? Icons.check_circle_rounded : Icons.calendar_today_rounded,
+                  color: isPaid ? const Color(0xFF059669) : const Color(0xFFCA8A04),
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Jatuh Tempo Pembayaran',
+                      isPaid ? 'Status Pembayaran' : 'Jatuh Tempo Pembayaran',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFFCA8A04),
+                        color: isPaid ? const Color(0xFF047857) : const Color(0xFFCA8A04),
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      '20 April 2025', // Use a static dummy that matches the reference vibe
+                      isPaid ? 'Lunas' : bill.jatuhTempo,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFA16207),
+                        color: isPaid ? const Color(0xFF047857) : const Color(0xFFA16207),
                         fontFamily: 'Inter',
                       ),
                     ),
@@ -242,7 +316,7 @@ class BapendaBillingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBillingDetailCard() {
+  Widget _buildBillingDetailCard(BapendaBillDetail bill) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -271,13 +345,13 @@ class BapendaBillingScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           
-          _buildBillingRow('Pokok PKB', 'Rp 250.000'),
+          _buildBillingRow('Pokok PKB', 'Rp ${_formatMoney(bill.pkbPokok)}'),
           const SizedBox(height: 12),
-          _buildBillingRow('SWDKLLJ', 'Rp 35.000'),
+          _buildBillingRow('SWDKLLJ', 'Rp ${_formatMoney(bill.swdkljj)}'),
           const SizedBox(height: 12),
-          _buildBillingRow('Biaya Admin', 'Rp 5.000'),
+          _buildBillingRow('Biaya Admin', 'Rp ${_formatMoney(bill.biayaAdmin)}'),
           const SizedBox(height: 12),
-          _buildBillingRow('Denda', 'Rp 0'),
+          _buildBillingRow('Denda', 'Rp ${_formatMoney(bill.denda)}'),
           
           const SizedBox(height: 16),
           const Divider(color: Color(0xFFE5E7EB), thickness: 1),
@@ -287,7 +361,7 @@ class BapendaBillingScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Total Tagihan', // Disesuaikan dengan reference
+                'Total Tagihan',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -296,11 +370,11 @@ class BapendaBillingScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                'Rp 185.000', // Disesuaikan dengan reference
-                style: TextStyle(
+                'Rp ${_formatMoney(bill.totalTagihan)}',
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF155DFC), // Biru cerah Majadigi
+                  color: Color(0xFF155DFC),
                   fontFamily: 'Inter',
                 ),
               ),

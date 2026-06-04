@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'islamic_center_registration_success_screen.dart';
 
 class IslamicCenterPaymentScreen extends StatefulWidget {
   final String roomName;
   final String date;
   final String totalAmount;
+  final String? bookingId;
+  final String? kodeBayar;
 
   const IslamicCenterPaymentScreen({
     super.key,
     required this.roomName,
     required this.date,
     this.totalAmount = 'Rp 1.500.000',
+    this.bookingId,
+    this.kodeBayar,
   });
 
   @override
@@ -226,41 +231,77 @@ class _IslamicCenterPaymentScreenState extends State<IslamicCenterPaymentScreen>
                                   Image.network(
                                     'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png',
                                     height: 40,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: const [
+                                          Text(
+                                            'QR',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 24,
+                                              color: Color(0xFF1E3A8A),
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                          Text(
+                                            'IS',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: 24,
+                                              color: Color(0xFFEF4444),
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   ),
                                   const SizedBox(height: 20),
-                                  // QR Code Placeholder
+                                  // QR Code Dynamic Rendering
                                   Container(
                                     width: 220,
                                     height: 220,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF8FAFC),
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: const Color(0xFFE2E8F0)),
                                     ),
+                                    padding: const EdgeInsets.all(16),
                                     child: Center(
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.qr_code_2, size: 120, color: Colors.black87),
-                                          const SizedBox(height: 8),
-                                          const Text(
-                                            'SCAN QR CODE',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 2,
-                                              color: Colors.black54,
+                                      child: widget.kodeBayar != null && widget.kodeBayar!.isNotEmpty
+                                          ? QrImageView(
+                                              data: widget.kodeBayar!,
+                                              version: QrVersions.auto,
+                                              size: 180.0,
+                                            )
+                                          : Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(Icons.qr_code_2, size: 120, color: Colors.black87),
+                                                const SizedBox(height: 8),
+                                                const Text(
+                                                  'SCAN QR CODE',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    letterSpacing: 2,
+                                                    color: Colors.black54,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ),
-                                        ],
-                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 20),
-                                  const Text(
-                                    'NMID: ID102003004005',
+                                  Text(
+                                    widget.kodeBayar != null && widget.kodeBayar!.isNotEmpty
+                                        ? 'KODE BAYAR: ${widget.kodeBayar}'
+                                        : 'NMID: ID102003004005',
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[800],
                                       fontFamily: 'Inter',
                                     ),
                                   ),
@@ -486,6 +527,7 @@ class _IslamicCenterPaymentScreenState extends State<IslamicCenterPaymentScreen>
                       builder: (context) => IslamicCenterRegistrationSuccessScreen(
                         roomName: widget.roomName,
                         date: widget.date,
+                        bookingId: widget.bookingId ?? 'IC-BK-2024001',
                       ),
                     ),
                   );
