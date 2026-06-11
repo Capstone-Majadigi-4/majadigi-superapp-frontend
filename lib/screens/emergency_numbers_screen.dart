@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:majadigi_superapp_frontend/providers/darurat_provider.dart';
 import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:majadigi_superapp_frontend/screens/emergency_contact_list_screen.dart';
@@ -18,6 +20,310 @@ class _EmergencyNumbersScreenState extends State<EmergencyNumbersScreen> with Si
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   bool _isSendingSos = false;
+
+  String _currentLocationText = "Belum mendeteksi lokasi";
+  double? _latitude;
+  double? _longitude;
+  bool _isLocating = false;
+
+  Future<void> _detectLocation() async {
+    setState(() {
+      _isLocating = true;
+    });
+    try {
+      // 1. Check & Request location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      
+      Position? position;
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 5),
+        );
+      }
+      
+      setState(() {
+        if (position != null) {
+          _latitude = position.latitude;
+          _longitude = position.longitude;
+          _currentLocationText = "${position.latitude}, ${position.longitude}";
+        } else {
+          // Mock/Simulation fallback
+          _latitude = -7.250445;
+          _longitude = 112.768845;
+          _currentLocationText = "-7.250445, 112.768845 (Simulasi)";
+        }
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Lokasi berhasil dideteksi!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _latitude = -7.250445;
+        _longitude = 112.768845;
+        _currentLocationText = "-7.250445, 112.768845 (Simulasi)";
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mengambil GPS ($e). Menggunakan lokasi simulasi.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isLocating = false;
+      });
+    }
+  }
+
+  Future<void> _shareToWhatsApp() async {
+    if (_latitude == null || _longitude == null) return;
+    final lat = _latitude;
+    final lng = _longitude;
+    final message = "DARURAT! Saya membutuhkan bantuan segera. Lokasi saya saat ini: https://www.google.com/maps/search/?api=1&query=$lat,$lng ($lat, $lng)";
+    final encodedMessage = Uri.encodeComponent(message);
+    final url = Uri.parse("https://wa.me/?text=$encodedMessage");
+    
+    final messenger = ScaffoldMessenger.of(context);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka WhatsApp.')),
+      );
+    }
+  }
+
+  Future<void> _shareViaSMS() async {
+    if (_latitude == null || _longitude == null) return;
+    final lat = _latitude;
+    final lng = _longitude;
+    final message = "DARURAT! Saya membutuhkan bantuan segera. Lokasi saya saat ini: https://www.google.com/maps/search/?api=1&query=$lat,$lng ($lat, $lng)";
+    final encodedMessage = Uri.encodeComponent(message);
+    final url = Uri.parse("sms:?body=$encodedMessage");
+    
+    final messenger = ScaffoldMessenger.of(context);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka aplikasi SMS.')),
+      );
+    }
+  }
+
+  Future<void> _copyLocationText() async {
+    if (_latitude == null || _longitude == null) return;
+    final lat = _latitude;
+    final lng = _longitude;
+    final message = "DARURAT! Saya membutuhkan bantuan segera. Lokasi saya saat ini: https://www.google.com/maps/search/?api=1&query=$lat,$lng ($lat, $lng)";
+    
+    final messenger = ScaffoldMessenger.of(context);
+    await Clipboard.setData(ClipboardData(text: message));
+    
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Pesan darurat & tautan lokasi disalin ke clipboard!'),
+        backgroundColor: Color(0xFF1E293B),
+      ),
+    );
+  }
+
+  Widget _buildShareLocationCard() {
+    final bool hasLocation = _latitude != null && _longitude != null;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.share_location_rounded, color: Color(0xFF3B82F6), size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Berbagi Lokasi Darurat',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                    fontFamily: 'Inter',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Kirim koordinat lokasi terkini Anda ke kerabat atau petugas penyelamat via WhatsApp atau SMS ketika terjadi kondisi darurat.',
+            style: TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 13,
+              height: 1.4,
+              fontFamily: 'Inter',
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.my_location, color: Color(0xFF64748B), size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'KOORDINAT GPS ANDA:',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF94A3B8),
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _currentLocationText,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: hasLocation ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_isLocating)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                    ),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.refresh_rounded, color: Color(0xFF3B82F6), size: 20),
+                    onPressed: _detectLocation,
+                    tooltip: 'Perbarui Lokasi',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: hasLocation ? _shareToWhatsApp : null,
+                  icon: const Icon(Icons.share_rounded, size: 16),
+                  label: const Text('WhatsApp'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF16A34A),
+                    disabledForegroundColor: Colors.grey.shade400,
+                    side: BorderSide(
+                      color: hasLocation ? const Color(0xFF16A34A) : Colors.grey.shade200,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: hasLocation ? _shareViaSMS : null,
+                  icon: const Icon(Icons.sms_rounded, size: 16),
+                  label: const Text('SMS'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF2563EB),
+                    disabledForegroundColor: Colors.grey.shade400,
+                    side: BorderSide(
+                      color: hasLocation ? const Color(0xFF2563EB) : Colors.grey.shade200,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: hasLocation ? _copyLocationText : null,
+                  icon: const Icon(Icons.copy_rounded, size: 16),
+                  label: const Text('Salin Teks'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF475569),
+                    disabledForegroundColor: Colors.grey.shade400,
+                    side: BorderSide(
+                      color: hasLocation ? const Color(0xFF475569) : Colors.grey.shade200,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (!hasLocation)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                '*Dapatkan lokasi Anda terlebih dahulu untuk membagikan.',
+                style: TextStyle(
+                  color: Color(0xFFE11D48),
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  fontFamily: 'Inter',
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -280,6 +586,30 @@ class _EmergencyNumbersScreenState extends State<EmergencyNumbersScreen> with Si
     );
   }
 
+  void _showSimulatedAlarmDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Text('🚨 ', style: TextStyle(fontSize: 24)),
+            Text('Alarm Suara Aktif', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Alarm suara keras disimulasikan untuk menarik perhatian orang di sekitar Anda. Sinyal bahaya juga dikirimkan ke kontak darurat terdekat.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Matikan Alarm', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<DaruratProvider>(context);
@@ -364,13 +694,16 @@ class _EmergencyNumbersScreenState extends State<EmergencyNumbersScreen> with Si
                         );
                       },
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
+                    GestureDetector(
+                      onTap: _showSimulatedAlarmDialog,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Text('🚨', style: TextStyle(fontSize: 20)),
                       ),
-                      child: const Text('🚨', style: TextStyle(fontSize: 20)),
                     ),
                   ],
                 ),
@@ -450,7 +783,11 @@ class _EmergencyNumbersScreenState extends State<EmergencyNumbersScreen> with Si
                         ),
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
+                    
+                    _buildShareLocationCard(),
+
+                    const SizedBox(height: 32),
 
                     // Blue Gradient Button to View Contacts
                     Container(

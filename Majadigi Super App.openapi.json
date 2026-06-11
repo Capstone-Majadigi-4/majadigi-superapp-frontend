@@ -22,10 +22,34 @@
       "name": "Islamic / Admin"
     },
     {
-      "name": "Bapok / Public"
+      "name": "Komoditas"
     },
     {
-      "name": "Bapok / Admin"
+      "name": "Harga Pasar"
+    },
+    {
+      "name": "Koperasi"
+    },
+    {
+      "name": "Harga Koperasi"
+    },
+    {
+      "name": "Perbandingan"
+    },
+    {
+      "name": "Alert"
+    },
+    {
+      "name": "Admin – Komoditas"
+    },
+    {
+      "name": "Admin – Harga Pasar"
+    },
+    {
+      "name": "Admin – Harga Koperasi"
+    },
+    {
+      "name": "Ticker"
     },
     {
       "name": "Transjatim / Public"
@@ -617,7 +641,11 @@
             "headers": {}
           }
         },
-        "security": []
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/islamic/acara/{id}": {
@@ -1338,23 +1366,22 @@
     },
     "/bapok/komoditas": {
       "get": {
-        "summary": "List Komoditas Aktif & Harga Hari Ini",
+        "summary": "List semua komoditas aktif",
         "deprecated": false,
-        "description": "Semua komoditas aktif beserta harga rata-rata, terendah, dan tertinggi hari ini.",
-        "operationId": "bapok-komoditas-list",
+        "description": "",
         "tags": [
-          "Bapok / Public"
+          "Komoditas"
         ],
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Daftar komoditas",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "#/components/schemas/BaseResponse"
+                      "$ref": "#/components/schemas/SuccessResponse"
                     },
                     {
                       "type": "object",
@@ -1379,12 +1406,11 @@
     },
     "/bapok/komoditas/{id}": {
       "get": {
-        "summary": "Detail Komoditas",
+        "summary": "Detail komoditas by ID",
         "deprecated": false,
         "description": "",
-        "operationId": "bapok-komoditas-detail",
         "tags": [
-          "Bapok / Public"
+          "Komoditas"
         ],
         "parameters": [
           {
@@ -1392,7 +1418,7 @@
             "in": "path",
             "description": "",
             "required": true,
-            "example": "30daecca-e788-46ab-8d6f-f31849b1fcf9",
+            "example": "ac0b3d08-c045-4ed1-ac5a-18321aedb3bb",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -1401,13 +1427,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Detail komoditas",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "#/components/schemas/BaseResponse"
+                      "$ref": "#/components/schemas/SuccessResponse"
                     },
                     {
                       "type": "object",
@@ -1424,30 +1450,11 @@
             "headers": {}
           },
           "404": {
-            "$ref": "#/components/responses/NotFound",
-            "description": "Resource tidak ditemukan"
-          }
-        },
-        "security": []
-      }
-    },
-    "/bapok/ticker": {
-      "get": {
-        "summary": "Ticker Volatilitas Harga",
-        "deprecated": false,
-        "description": "3 komoditas dengan perubahan harga tertinggi hari ini vs kemarin. Cocok untuk widget dashboard.",
-        "operationId": "bapok-ticker",
-        "tags": [
-          "Bapok / Public"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Data ticker",
+            "description": "Komoditas tidak ditemukan",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BaseResponse"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
@@ -1459,31 +1466,29 @@
     },
     "/bapok/harga": {
       "get": {
-        "summary": "Harga Harian per Pasar",
+        "summary": "Harga harian pasar per tanggal",
         "deprecated": false,
-        "description": "Harga semua komoditas untuk tanggal tertentu. Jika `pasar_id` tidak diisi, tampil semua pasar.",
-        "operationId": "bapok-harga-harian",
+        "description": "",
         "tags": [
-          "Bapok / Public"
+          "Harga Pasar"
         ],
         "parameters": [
           {
             "name": "tanggal",
             "in": "query",
-            "description": "Default: hari ini",
+            "description": "Default hari ini bila tidak diisi",
             "required": false,
-            "example": "2026-05-03",
             "schema": {
               "type": "string",
-              "format": "date"
+              "format": "date",
+              "example": "2026-06-10"
             }
           },
           {
             "name": "pasar_id",
             "in": "query",
-            "description": "",
+            "description": "Filter per pasar (opsional)",
             "required": false,
-            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -1492,13 +1497,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Harga harian",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "#/components/schemas/BaseResponse"
+                      "$ref": "#/components/schemas/SuccessResponse"
                     },
                     {
                       "type": "object",
@@ -1506,12 +1511,23 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/HargaHarian"
+                            "$ref": "#/components/schemas/HargaWithDetail"
                           }
                         }
                       }
                     }
                   ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "Format tanggal tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             },
@@ -1523,12 +1539,11 @@
     },
     "/bapok/harga/{komoditas_id}/histori": {
       "get": {
-        "summary": "Histori Harga 7 Hari per Komoditas",
+        "summary": "Histori harga 7 hari terakhir untuk komoditas tertentu",
         "deprecated": false,
-        "description": "Histori harga 7 hari terakhir untuk satu komoditas. Cocok untuk render grafik.",
-        "operationId": "bapok-harga-histori",
+        "description": "",
         "tags": [
-          "Bapok / Public"
+          "Harga Pasar"
         ],
         "parameters": [
           {
@@ -1536,7 +1551,7 @@
             "in": "path",
             "description": "",
             "required": true,
-            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "example": "ac0b3d08-c045-4ed1-ac5a-18321aedb3bb",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -1545,39 +1560,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Histori harga",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BaseResponse"
-                }
-              }
-            },
-            "headers": {}
-          }
-        },
-        "security": []
-      }
-    },
-    "/bapok/alert/saya": {
-      "get": {
-        "summary": "List Price Alert Saya",
-        "deprecated": false,
-        "description": "",
-        "operationId": "bapok-alert-list",
-        "tags": [
-          "Bapok / Public"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Daftar alert",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "#/components/schemas/BaseResponse"
+                      "$ref": "#/components/schemas/SuccessResponse"
                     },
                     {
                       "type": "object",
@@ -1585,7 +1574,7 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/PriceAlert"
+                            "$ref": "#/components/schemas/HargaHistori"
                           }
                         }
                       }
@@ -1597,51 +1586,244 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
+        "security": []
+      }
+    },
+    "/bapok/koperasi": {
+      "get": {
+        "summary": "List semua cabang Koperasi Merah Putih aktif",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Koperasi"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Koperasi"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
           }
-        ]
+        },
+        "security": []
+      }
+    },
+    "/bapok/harga/koperasi": {
+      "get": {
+        "summary": "Harga harian koperasi per tanggal",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Harga Koperasi"
+        ],
+        "parameters": [
+          {
+            "name": "tanggal",
+            "in": "query",
+            "description": "Default hari ini bila tidak diisi",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-06-10"
+            }
+          },
+          {
+            "name": "koperasi_id",
+            "in": "query",
+            "description": "Filter per cabang koperasi (opsional)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/HargaKoperasiDetail"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "Format tanggal tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapok/harga/perbandingan": {
+      "get": {
+        "summary": "Perbandingan rata-rata harga pasar vs koperasi per tanggal",
+        "deprecated": false,
+        "description": "Menampilkan semua komoditas aktif yang memiliki minimal satu sumber harga\n(pasar atau koperasi) pada tanggal tersebut. Field `harga_pasar`,\n`harga_koperasi`, dan `selisih` bisa `null` bila data tidak tersedia\nuntuk salah satu sumber.\n\n`selisih = harga_pasar - harga_koperasi` (nilai positif = pasar lebih mahal)\n",
+        "tags": [
+          "Perbandingan"
+        ],
+        "parameters": [
+          {
+            "name": "tanggal",
+            "in": "query",
+            "description": "Default hari ini bila tidak diisi",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-06-10"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/HargaPerbandingan"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "Format tanggal tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapok/alert/saya": {
+      "get": {
+        "summary": "List price alert milik user yang sedang login",
+        "deprecated": false,
+        "description": "NIK user dibaca dari header `x-user-nik` yang diinjeksi Gateway.",
+        "tags": [
+          "Alert"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AlertWithDetail"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
       }
     },
     "/bapok/alert": {
       "post": {
-        "summary": "Buat Price Alert",
+        "summary": "Buat price alert baru",
         "deprecated": false,
-        "description": "Buat alert harga. `tipe`: `naik_diatas` atau `turun_dibawah`. Notifikasi dikirim saat harga melewati `nominal`.",
-        "operationId": "bapok-alert-create",
+        "description": "NIK user dibaca dari header `x-user-nik` yang diinjeksi Gateway.",
         "tags": [
-          "Bapok / Public"
+          "Alert"
         ],
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "komoditas_id",
-                  "tipe",
-                  "nominal"
-                ],
-                "properties": {
-                  "komoditas_id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "example": "30daecca-e788-46ab-8d6f-f31849b1fcf9"
-                  },
-                  "tipe": {
-                    "type": "string",
-                    "enum": [
-                      "naik_diatas",
-                      "turun_dibawah"
-                    ]
-                  },
-                  "nominal": {
-                    "type": "number",
-                    "example": 50000
-                  }
-                }
+                "$ref": "#/components/schemas/CreateAlertRequest"
+              },
+              "example": {
+                "komoditas_id": "550e8400-e29b-41d4-a716-446655440000",
+                "tipe": "naik_diatas",
+                "nominal": 15000
               }
             }
           },
@@ -1650,28 +1832,37 @@
         "responses": {
           "201": {
             "description": "Alert berhasil dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            },
             "headers": {}
           },
-          "409": {
-            "$ref": "#/components/responses/Conflict",
-            "description": "Conflict — data sudah ada atau kondisi tidak terpenuhi"
+          "400": {
+            "description": "Validasi gagal atau alert duplikat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "headers": {}
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security": []
       }
     },
     "/bapok/alert/{id}": {
       "delete": {
-        "summary": "Hapus Price Alert",
+        "summary": "Hapus price alert",
         "deprecated": false,
-        "description": "Hapus price alert milik sendiri.",
-        "operationId": "bapok-alert-delete",
+        "description": "",
         "tags": [
-          "Bapok / Public"
+          "Alert"
         ],
         "parameters": [
           {
@@ -1679,7 +1870,7 @@
             "in": "path",
             "description": "",
             "required": true,
-            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "example": "",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -1689,65 +1880,50 @@
         "responses": {
           "200": {
             "description": "Alert berhasil dihapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            },
             "headers": {}
           },
           "404": {
-            "$ref": "#/components/responses/NotFound",
-            "description": "Resource tidak ditemukan"
+            "description": "Alert tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
           }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
+        "security": []
       }
     },
-    "/bapok/admin/komoditas": {
+    "/admin/komoditas": {
       "post": {
-        "summary": "Tambah Komoditas Baru",
+        "summary": "Tambah komoditas baru",
         "deprecated": false,
         "description": "",
-        "operationId": "bapok-admin-komoditas-create",
         "tags": [
-          "Bapok / Admin"
+          "Admin – Komoditas"
         ],
         "parameters": [],
         "requestBody": {
           "content": {
-            "multipart/form-data": {
-              "encoding": {
-                "ikon": {
-                  "contentType": "image/png, image/svg+xml, image/webp"
-                }
-              },
+            "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "nama": {
-                    "type": "string",
-                    "example": "Beras Premium"
-                  },
-                  "kategori": {
-                    "type": "string",
-                    "example": "Beras"
-                  },
-                  "satuan": {
-                    "type": "string",
-                    "example": "kg"
-                  },
-                  "ikon": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Ikon komoditas (png/svg/webp, maks 500KB). Disimpan ke MinIO, URL-nya tersimpan sebagai `ikon_url`.",
-                    "example": ""
-                  }
-                },
-                "required": [
-                  "nama",
-                  "kategori",
-                  "satuan"
-                ]
+                "$ref": "#/components/schemas/CreateKomoditasRequest"
+              },
+              "example": {
+                "nama": "Beras Premium",
+                "kategori": "Pokok",
+                "satuan": "kg",
+                "ikon_url": "https://cdn.example.com/beras-premium.png"
               }
             }
           },
@@ -1755,25 +1931,65 @@
         },
         "responses": {
           "201": {
-            "description": "Komoditas berhasil ditambahkan",
+            "description": "Komoditas berhasil dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/Komoditas"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "Admin secret tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
             "headers": {}
           }
         },
         "security": [
           {
-            "bapokAdminKey": []
+            "AdminSecret": []
           }
         ]
       }
     },
-    "/bapok/admin/komoditas/{id}": {
+    "/admin/komoditas/{id}": {
       "patch": {
-        "summary": "Update Komoditas",
+        "summary": "Update komoditas",
         "deprecated": false,
-        "description": "Update partial komoditas (PATCH — hanya field yang dikirim yang diubah).",
-        "operationId": "bapok-admin-komoditas-update",
+        "description": "",
         "tags": [
-          "Bapok / Admin"
+          "Admin – Komoditas"
         ],
         "parameters": [
           {
@@ -1781,7 +1997,7 @@
             "in": "path",
             "description": "",
             "required": true,
-            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "example": "",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -1790,38 +2006,9 @@
         ],
         "requestBody": {
           "content": {
-            "multipart/form-data": {
-              "encoding": {
-                "ikon": {
-                  "contentType": "image/png, image/svg+xml, image/webp"
-                }
-              },
+            "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "nama": {
-                    "type": "string",
-                    "example": ""
-                  },
-                  "kategori": {
-                    "type": "string",
-                    "example": ""
-                  },
-                  "satuan": {
-                    "type": "string",
-                    "example": ""
-                  },
-                  "is_active": {
-                    "type": "boolean",
-                    "example": ""
-                  },
-                  "ikon": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Ganti ikon komoditas (opsional). png/svg/webp, maks 500KB.",
-                    "example": ""
-                  }
-                }
+                "$ref": "#/components/schemas/UpdateKomoditasRequest"
               }
             }
           },
@@ -1830,26 +2017,50 @@
         "responses": {
           "200": {
             "description": "Komoditas berhasil diupdate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "Admin secret tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
             "headers": {}
           },
           "404": {
-            "$ref": "#/components/responses/NotFound",
-            "description": "Resource tidak ditemukan"
+            "description": "Komoditas tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
           }
         },
         "security": [
           {
-            "bapokAdminKey": []
+            "AdminSecret": []
           }
         ]
       },
       "delete": {
-        "summary": "Hapus Komoditas",
+        "summary": "Hapus komoditas",
         "deprecated": false,
         "description": "",
-        "operationId": "bapok-admin-komoditas-delete",
         "tags": [
-          "Bapok / Admin"
+          "Admin – Komoditas"
         ],
         "parameters": [
           {
@@ -1857,7 +2068,7 @@
             "in": "path",
             "description": "",
             "required": true,
-            "example": "866ff9d8-d46d-dabb-db53-ce018978f908",
+            "example": "",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -1867,62 +2078,65 @@
         "responses": {
           "200": {
             "description": "Komoditas berhasil dihapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "Admin secret tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
             "headers": {}
           },
           "404": {
-            "$ref": "#/components/responses/NotFound",
-            "description": "Resource tidak ditemukan"
+            "description": "Komoditas tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
           }
         },
         "security": [
           {
-            "bapokAdminKey": []
+            "AdminSecret": []
           }
         ]
       }
     },
-    "/bapok/admin/harga": {
+    "/admin/harga": {
       "post": {
-        "summary": "Input Harga Komoditas",
+        "summary": "Input / update harga pasar (single entry)",
         "deprecated": false,
-        "description": "Input harga satu komoditas di satu pasar untuk tanggal tertentu.",
-        "operationId": "bapok-admin-harga-input",
+        "description": "Upsert berdasarkan `(komoditas_id, pasar_id, tanggal)`.\nNIK operator dibaca dari header `x-user-nik`.\n",
         "tags": [
-          "Bapok / Admin"
+          "Admin – Harga Pasar"
         ],
         "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "required": [
-                  "komoditas_id",
-                  "pasar_id",
-                  "harga",
-                  "tanggal"
-                ],
-                "properties": {
-                  "komoditas_id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "example": "16791026-017a-4ee7-a359-2a9633629476"
-                  },
-                  "pasar_id": {
-                    "type": "string",
-                    "format": "uuid",
-                    "example": "isi-pasar-id-dari-db"
-                  },
-                  "harga": {
-                    "type": "number",
-                    "example": 14000
-                  },
-                  "tanggal": {
-                    "type": "string",
-                    "format": "date",
-                    "example": "2026-05-03"
-                  }
-                }
+                "$ref": "#/components/schemas/CreateHargaRequest"
+              },
+              "example": {
+                "komoditas_id": "550e8400-e29b-41d4-a716-446655440000",
+                "pasar_id": "661f9511-f30c-52e5-b827-557766551111",
+                "harga": 13500,
+                "tanggal": "2026-06-10"
               }
             }
           },
@@ -1931,41 +2145,64 @@
         "responses": {
           "201": {
             "description": "Harga berhasil diinput",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "Admin secret tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
             "headers": {}
           }
         },
         "security": [
           {
-            "bapokAdminKey": []
+            "AdminSecret": []
           }
         ]
       }
     },
-    "/bapok/admin/harga/bulk-csv": {
+    "/admin/harga/bulk-csv": {
       "post": {
-        "summary": "Upload CSV Massal Harga",
+        "summary": "Bulk input harga pasar via CSV",
         "deprecated": false,
-        "description": "Upload CSV untuk input harga banyak komoditas sekaligus.\n\nFormat header CSV: `nama_komoditas,nama_pasar,harga,tanggal`\n\nContoh baris: `Beras Medium,Pasar Besar Malang,13500,2026-05-03`",
-        "operationId": "bapok-admin-harga-bulk",
+        "description": "Format CSV (header wajib ada, kolom: nama_komoditas, nama_pasar, harga, tanggal):\n```\nnama_komoditas,nama_pasar,harga,tanggal\nBeras Medium,Pasar Besar Malang,13500,2026-06-10\n```\n",
         "tags": [
-          "Bapok / Admin"
+          "Admin – Harga Pasar"
         ],
         "parameters": [],
         "requestBody": {
           "content": {
             "multipart/form-data": {
-              "encoding": {
-                "file": {
-                  "contentType": "text/csv"
-                }
-              },
               "schema": {
                 "type": "object",
                 "properties": {
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "File CSV. Header wajib: `nama_komoditas,nama_pasar,harga,tanggal`. Contoh baris: `Beras Medium,Pasar Besar Malang,13500,2026-05-03`",
+                    "description": "File CSV",
                     "example": ""
                   }
                 },
@@ -1979,35 +2216,235 @@
         },
         "responses": {
           "200": {
-            "description": "Bulk upload selesai",
+            "description": "Bulk upload selesai (bisa partial success)",
             "content": {
               "application/json": {
                 "schema": {
                   "allOf": [
                     {
-                      "$ref": "#/components/schemas/BaseResponse"
+                      "$ref": "#/components/schemas/SuccessResponse"
                     },
                     {
                       "type": "object",
                       "properties": {
                         "data": {
-                          "type": "object",
-                          "properties": {
-                            "total": {
-                              "type": "integer"
-                            },
-                            "sukses": {
-                              "type": "integer"
-                            },
-                            "gagal": {
-                              "type": "integer"
-                            },
-                            "errors": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            }
+                          "$ref": "#/components/schemas/BulkCSVResult"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "File tidak ditemukan atau semua baris gagal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "Admin secret tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "AdminSecret": []
+          }
+        ]
+      }
+    },
+    "/admin/harga-koperasi": {
+      "post": {
+        "summary": "Input / update harga koperasi (single entry)",
+        "deprecated": false,
+        "description": "Upsert berdasarkan `(komoditas_id, koperasi_id, tanggal)`.\nNIK operator dibaca dari header `x-user-nik`.\n",
+        "tags": [
+          "Admin – Harga Koperasi"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHargaKoperasiRequest"
+              },
+              "example": {
+                "komoditas_id": "550e8400-e29b-41d4-a716-446655440000",
+                "koperasi_id": "772fa622-g41d-63f6-c938-668877662222",
+                "harga": 11700,
+                "tanggal": "2026-06-10"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Harga koperasi berhasil diinput",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "Admin secret tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "AdminSecret": []
+          }
+        ]
+      }
+    },
+    "/admin/harga-koperasi/bulk-csv": {
+      "post": {
+        "summary": "Bulk input harga koperasi via CSV",
+        "deprecated": false,
+        "description": "Format CSV (header wajib ada, kolom: nama_komoditas, nama_koperasi, harga, tanggal):\n```\nnama_komoditas,nama_koperasi,harga,tanggal\nBeras Medium,Koperasi Merah Putih Klojen,11700,2026-06-10\n```\n",
+        "tags": [
+          "Admin – Harga Koperasi"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File CSV",
+                    "example": ""
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk upload selesai (bisa partial success)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/BulkCSVResult"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "description": "File tidak ditemukan atau semua baris gagal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "description": "Admin secret tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": [
+          {
+            "AdminSecret": []
+          }
+        ]
+      }
+    },
+    "/ticker": {
+      "get": {
+        "summary": "Harga terakhir semua komoditas (live ticker)",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "Ticker"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SuccessResponse"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/TickerItem"
                           }
                         }
                       }
@@ -2019,11 +2456,7 @@
             "headers": {}
           }
         },
-        "security": [
-          {
-            "bapokAdminKey": []
-          }
-        ]
+        "security": []
       }
     },
     "/transjatim/koridor": {
@@ -2490,7 +2923,31 @@
         ]
       }
     },
-    "/": {
+    "/bansos/program": {
+      "get": {
+        "summary": "program",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bansos/pengumuman": {
       "get": {
         "summary": "pengumuman",
         "deprecated": false,
@@ -2507,7 +2964,8 @@
                   "properties": {}
                 }
               }
-            }
+            },
+            "headers": {}
           }
         },
         "security": []
@@ -2926,7 +3384,7 @@
       "get": {
         "summary": "rekap",
         "deprecated": false,
-        "description": "",
+        "description": "Mendapatkan rekapitulasi statistik pajak",
         "tags": [],
         "parameters": [
           {
@@ -2972,7 +3430,7 @@
       "get": {
         "summary": "widget",
         "deprecated": false,
-        "description": "",
+        "description": "Mendapatkan data ringkasan pajak untuk widget (jumlah kendaraan, total tunggakan,\njatuh tempo",
         "tags": [],
         "parameters": [],
         "responses": {
@@ -3000,7 +3458,7 @@
       "get": {
         "summary": "tagihan/nopol",
         "deprecated": false,
-        "description": "",
+        "description": "Mendapatkan detail tagihan pajak kendaraan berdasarkan nomor polisi",
         "tags": [],
         "parameters": [],
         "responses": {
@@ -3028,7 +3486,7 @@
       "get": {
         "summary": "etbpkb",
         "deprecated": false,
-        "description": "",
+        "description": "Mendapatkan informasi status dan detail E-TBPKB kendaraan",
         "tags": [],
         "parameters": [],
         "responses": {
@@ -3056,7 +3514,7 @@
       "post": {
         "summary": "bayar",
         "deprecated": false,
-        "description": "",
+        "description": "Membuat transaksi pembayaran (mendapatkan instruksi pembayaran VA/Qris)",
         "tags": [],
         "parameters": [],
         "responses": {
@@ -3084,7 +3542,7 @@
       "post": {
         "summary": "payment",
         "deprecated": false,
-        "description": "",
+        "description": "Konfirmasi pembayaran oleh sistem Bapenda (callback/webhook internal).",
         "tags": [],
         "parameters": [],
         "responses": {
@@ -3112,7 +3570,7 @@
       "get": {
         "summary": "pembayaran",
         "deprecated": false,
-        "description": "",
+        "description": "Mendapatkan riwayat pembayaran pajak kendaraan.",
         "tags": [],
         "parameters": [],
         "responses": {
@@ -3140,7 +3598,7 @@
       "get": {
         "summary": "kendaraan",
         "deprecated": false,
-        "description": "",
+        "description": "Mendapatkan daftar kendaraan yang terdaftar atas nama pengguna.",
         "tags": [],
         "parameters": [],
         "responses": {
@@ -3707,14 +4165,26 @@
           }
         }
       },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "message": {
+            "type": "string",
+            "example": "OK"
+          },
+          "data": {},
+          "code": {
+            "type": "integer",
+            "example": 200
+          }
+        }
+      },
       "ErrorResponse": {
         "type": "object",
-        "required": [
-          "status",
-          "message",
-          "error",
-          "code"
-        ],
         "properties": {
           "status": {
             "type": "string",
@@ -3722,15 +4192,11 @@
           },
           "message": {
             "type": "string",
-            "example": "Token tidak valid"
-          },
-          "error": {
-            "type": "string",
-            "example": "UNAUTHORIZED"
+            "example": "Request tidak valid"
           },
           "code": {
             "type": "integer",
-            "example": 401
+            "example": 400
           }
         }
       },
@@ -3771,6 +4237,29 @@
           }
         }
       },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "error"
+          },
+          "message": {
+            "type": "string",
+            "example": "Validasi gagal"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "code": {
+            "type": "integer",
+            "example": 400
+          }
+        }
+      },
       "LoginRequest": {
         "type": "object",
         "required": [
@@ -3790,6 +4279,61 @@
           "fcm_token": {
             "type": "string",
             "example": "device-token-fcm-xxx"
+          }
+        }
+      },
+      "Komoditas": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama": {
+            "type": "string",
+            "example": "Beras Medium"
+          },
+          "kategori": {
+            "type": "string",
+            "nullable": true,
+            "example": "Pokok"
+          },
+          "satuan": {
+            "type": "string",
+            "nullable": true,
+            "example": "kg"
+          },
+          "ikon_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "harga_rata_rata": {
+            "type": "integer",
+            "nullable": true,
+            "example": 13000
+          },
+          "harga_terendah": {
+            "type": "integer",
+            "nullable": true,
+            "example": 12500
+          },
+          "harga_tertinggi": {
+            "type": "integer",
+            "nullable": true,
+            "example": 13500
+          },
+          "tanggal_harga": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
           }
         }
       },
@@ -3846,6 +4390,34 @@
           }
         ]
       },
+      "CreateKomoditasRequest": {
+        "type": "object",
+        "required": [
+          "nama",
+          "kategori",
+          "satuan",
+          "ikon_url"
+        ],
+        "properties": {
+          "nama": {
+            "type": "string",
+            "example": "Beras Medium"
+          },
+          "kategori": {
+            "type": "string",
+            "example": "Pokok"
+          },
+          "satuan": {
+            "type": "string",
+            "example": "kg"
+          },
+          "ikon_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://cdn.example.com/beras.png"
+          }
+        }
+      },
       "UserProfile": {
         "type": "object",
         "required": [
@@ -3872,6 +4444,27 @@
           }
         }
       },
+      "UpdateKomoditasRequest": {
+        "type": "object",
+        "properties": {
+          "nama": {
+            "type": "string"
+          },
+          "kategori": {
+            "type": "string"
+          },
+          "satuan": {
+            "type": "string"
+          },
+          "ikon_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        }
+      },
       "AntreanRequest": {
         "type": "object",
         "required": [
@@ -3894,6 +4487,43 @@
             "type": "string",
             "format": "date",
             "example": "2025-04-07"
+          }
+        }
+      },
+      "HargaWithDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_komoditas": {
+            "type": "string",
+            "example": "Beras Medium"
+          },
+          "satuan": {
+            "type": "string",
+            "example": "kg"
+          },
+          "pasar_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_pasar": {
+            "type": "string",
+            "example": "Pasar Besar Malang"
+          },
+          "harga": {
+            "type": "integer",
+            "example": 13000
+          },
+          "tanggal": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
@@ -3940,14 +4570,58 @@
           }
         }
       },
-      "Komoditas": {
+      "HargaHistori": {
+        "type": "object",
+        "properties": {
+          "tanggal": {
+            "type": "string",
+            "format": "date"
+          },
+          "harga": {
+            "type": "integer",
+            "example": 13000
+          },
+          "pasar_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_pasar": {
+            "type": "string",
+            "example": "Pasar Besar Malang"
+          }
+        }
+      },
+      "CreateHargaRequest": {
         "type": "object",
         "required": [
-          "id",
-          "nama",
-          "satuan",
-          "is_active"
+          "komoditas_id",
+          "pasar_id",
+          "harga",
+          "tanggal"
         ],
+        "properties": {
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pasar_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "harga": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 13000
+          },
+          "tanggal": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-06-10"
+          }
+        }
+      },
+      "Koperasi": {
+        "type": "object",
         "properties": {
           "id": {
             "type": "string",
@@ -3955,111 +4629,48 @@
           },
           "nama": {
             "type": "string",
-            "example": "Beras Medium"
+            "example": "Koperasi Merah Putih Klojen"
           },
-          "kategori": {
+          "kota": {
             "type": "string",
-            "example": "Beras"
+            "example": "Malang"
+          }
+        }
+      },
+      "HargaKoperasiDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_komoditas": {
+            "type": "string",
+            "example": "Beras Medium"
           },
           "satuan": {
             "type": "string",
             "example": "kg"
           },
-          "ikon_url": {
-            "type": "string",
-            "format": "uri"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "harga_rata_rata": {
-            "type": "number",
-            "example": 13500
-          },
-          "harga_terendah": {
-            "type": "number",
-            "example": 12000
-          },
-          "harga_tertinggi": {
-            "type": "number",
-            "example": 15000
-          },
-          "tanggal_harga": {
-            "type": "string",
-            "format": "date"
-          }
-        }
-      },
-      "HargaHarian": {
-        "type": "object",
-        "properties": {
-          "id": {
+          "koperasi_id": {
             "type": "string",
             "format": "uuid"
           },
-          "komoditas_id": {
+          "nama_koperasi": {
             "type": "string",
-            "format": "uuid"
-          },
-          "nama_komoditas": {
-            "type": "string"
-          },
-          "satuan": {
-            "type": "string"
-          },
-          "pasar_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "nama_pasar": {
-            "type": "string"
+            "example": "Koperasi Merah Putih Klojen"
           },
           "harga": {
-            "type": "number"
+            "type": "integer",
+            "example": 11700
           },
           "tanggal": {
             "type": "string",
             "format": "date"
-          }
-        }
-      },
-      "PriceAlert": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "user_nik": {
-            "type": "string"
-          },
-          "komoditas_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tipe": {
-            "type": "string",
-            "enum": [
-              "naik_diatas",
-              "turun_dibawah"
-            ]
-          },
-          "nominal": {
-            "type": "number"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "last_triggered_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "nama_komoditas": {
-            "type": "string"
           }
         }
       },
@@ -4094,6 +4705,35 @@
           },
           "is_active": {
             "type": "boolean"
+          }
+        }
+      },
+      "CreateHargaKoperasiRequest": {
+        "type": "object",
+        "required": [
+          "komoditas_id",
+          "koperasi_id",
+          "harga",
+          "tanggal"
+        ],
+        "properties": {
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "koperasi_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "harga": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 11700
+          },
+          "tanggal": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-06-10"
           }
         }
       },
@@ -4150,6 +4790,42 @@
           }
         }
       },
+      "HargaPerbandingan": {
+        "type": "object",
+        "properties": {
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_komoditas": {
+            "type": "string",
+            "example": "Beras Medium"
+          },
+          "satuan": {
+            "type": "string",
+            "example": "kg"
+          },
+          "tanggal": {
+            "type": "string",
+            "format": "date"
+          },
+          "harga_pasar": {
+            "type": "integer",
+            "nullable": true,
+            "example": 13000
+          },
+          "harga_koperasi": {
+            "type": "integer",
+            "nullable": true,
+            "example": 11700
+          },
+          "selisih": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1300
+          }
+        }
+      },
       "BuatTiketRequest": {
         "type": "object",
         "required": [
@@ -4167,6 +4843,121 @@
             "minimum": 1,
             "maximum": 10,
             "example": 1
+          }
+        }
+      },
+      "BulkCSVResult": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 10
+          },
+          "sukses": {
+            "type": "integer",
+            "example": 9
+          },
+          "gagal": {
+            "type": "integer",
+            "example": 1
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "AlertWithDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_komoditas": {
+            "type": "string",
+            "example": "Beras Medium"
+          },
+          "tipe": {
+            "type": "string",
+            "enum": [
+              "naik_diatas",
+              "turun_dibawah"
+            ]
+          },
+          "nominal": {
+            "type": "integer",
+            "example": 15000
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "last_triggered_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateAlertRequest": {
+        "type": "object",
+        "required": [
+          "komoditas_id",
+          "tipe",
+          "nominal"
+        ],
+        "properties": {
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipe": {
+            "type": "string",
+            "enum": [
+              "naik_diatas",
+              "turun_dibawah"
+            ]
+          },
+          "nominal": {
+            "type": "integer",
+            "minimum": 1,
+            "example": 15000
+          }
+        }
+      },
+      "TickerItem": {
+        "type": "object",
+        "properties": {
+          "komoditas_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nama_komoditas": {
+            "type": "string",
+            "example": "Beras Medium"
+          },
+          "satuan": {
+            "type": "string",
+            "example": "kg"
+          },
+          "harga_terakhir": {
+            "type": "integer",
+            "example": 13000
+          },
+          "tanggal": {
+            "type": "string",
+            "format": "date"
           }
         }
       }
@@ -4278,27 +5069,11 @@
           "keyVariableName": "ISLAMIC_ADMIN_KEY"
         }
       },
-      "bapokAdminKey": {
+      "AdminSecret": {
         "type": "apiKey",
         "in": "header",
-        "name": "X-Admin-Key",
-        "description": "Admin Key untuk modul Bapok. Di Apidog, set variable **`BAPOK_ADMIN_KEY`** di environment.",
-        "x-apidog-auth": {
-          "type": "apikey",
-          "keyVariableName": "BAPOK_ADMIN_KEY"
-        }
-      }
-    },
-    "parameters": {
-      "IdPath": {
-        "name": "id",
-        "in": "path",
-        "required": true,
-        "schema": {
-          "type": "string",
-          "format": "uuid"
-        },
-        "description": "UUID resource"
+        "name": "X-Admin-Secret",
+        "description": "Secret key admin bapok-service"
       }
     }
   },

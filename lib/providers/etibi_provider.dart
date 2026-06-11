@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:majadigi_superapp_frontend/models/etibi_model.dart';
 import 'package:majadigi_superapp_frontend/services/api/etibi_repository.dart';
+import 'package:majadigi_superapp_frontend/services/notification_service.dart';
 
 class EtibiProvider extends ChangeNotifier {
   final EtibiRepository _repository = EtibiRepository();
@@ -122,34 +123,78 @@ class EtibiProvider extends ChangeNotifier {
   }
 
   Future<void> toggleReminder(bool isEnabled) async {
-    if (_adherenceStatus == null) return;
-    
     _isLoading = true;
     notifyListeners();
 
+    _adherenceStatus ??= MedicationAdherenceStatus(
+      startDate: DateTime.now().toIso8601String().substring(0, 10),
+      currentProgress: '1/180 hari',
+      adherencePercentage: 100,
+      isReminderEnabled: false,
+      dailyReminderTime: '08:00',
+    );
+
+    final time = _adherenceStatus!.dailyReminderTime;
+
     try {
-      await _repository.updateReminderSettings(isEnabled, _adherenceStatus!.dailyReminderTime);
+      await _repository.updateReminderSettings(isEnabled, time);
       _adherenceStatus = await _repository.getAdherenceStatus();
     } catch (e) {
-      _errorMessage = e.toString();
+      print('Etibi toggle reminder API failed: $e. Using local/offline fallback.');
+      _adherenceStatus = MedicationAdherenceStatus(
+        startDate: _adherenceStatus!.startDate,
+        currentProgress: _adherenceStatus!.currentProgress,
+        adherencePercentage: _adherenceStatus!.adherencePercentage,
+        isReminderEnabled: isEnabled,
+        dailyReminderTime: time,
+      );
     } finally {
+      if (isEnabled) {
+        try {
+          await NotificationService().showTbcMedicineNotification(time: time);
+        } catch (err) {
+          print('Error showing TBC notification: $err');
+        }
+      }
       _isLoading = false;
       notifyListeners();
     }
   }
 
   Future<void> updateReminderTime(String time) async {
-    if (_adherenceStatus == null) return;
-    
     _isLoading = true;
     notifyListeners();
 
+    _adherenceStatus ??= MedicationAdherenceStatus(
+      startDate: DateTime.now().toIso8601String().substring(0, 10),
+      currentProgress: '1/180 hari',
+      adherencePercentage: 100,
+      isReminderEnabled: true,
+      dailyReminderTime: '08:00',
+    );
+
+    final isEnabled = _adherenceStatus!.isReminderEnabled;
+
     try {
-      await _repository.updateReminderSettings(_adherenceStatus!.isReminderEnabled, time);
+      await _repository.updateReminderSettings(isEnabled, time);
       _adherenceStatus = await _repository.getAdherenceStatus();
     } catch (e) {
-      _errorMessage = e.toString();
+      print('Etibi update reminder time API failed: $e. Using local/offline fallback.');
+      _adherenceStatus = MedicationAdherenceStatus(
+        startDate: _adherenceStatus!.startDate,
+        currentProgress: _adherenceStatus!.currentProgress,
+        adherencePercentage: _adherenceStatus!.adherencePercentage,
+        isReminderEnabled: isEnabled,
+        dailyReminderTime: time,
+      );
     } finally {
+      if (isEnabled) {
+        try {
+          await NotificationService().showTbcMedicineNotification(time: time);
+        } catch (err) {
+          print('Error showing TBC notification: $err');
+        }
+      }
       _isLoading = false;
       notifyListeners();
     }

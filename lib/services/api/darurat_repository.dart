@@ -25,70 +25,74 @@ class DaruratRepository {
     ),
   ];
 
+  static final List<EmergencyAgency> _fallbackAgencies = [
+    EmergencyAgency(
+      id: 'agency-1',
+      title: 'Call Center 112',
+      subtitle: 'Layanan Darurat Terpadu Jawa Timur',
+      number: '112',
+      distance: '0.5 km',
+    ),
+    EmergencyAgency(
+      id: 'agency-2',
+      title: 'Polisi',
+      subtitle: 'Kepolisian Negara RI',
+      number: '110',
+      distance: '1.2 km',
+    ),
+    EmergencyAgency(
+      id: 'agency-3',
+      title: 'Ambulans/Medis',
+      subtitle: 'Layanan Kesehatan Darurat',
+      number: '119',
+      distance: '2.0 km',
+    ),
+    EmergencyAgency(
+      id: 'agency-4',
+      title: 'Pemadam Kebakaran',
+      subtitle: 'Dinas Pemadam Kebakaran',
+      number: '113',
+      distance: '2.5 km',
+    ),
+    EmergencyAgency(
+      id: 'agency-5',
+      title: 'SAR',
+      subtitle: 'Search and Rescue Indonesia',
+      number: '115',
+      distance: '4.8 km',
+    ),
+    EmergencyAgency(
+      id: 'agency-6',
+      title: 'PLN',
+      subtitle: 'Gangguan Listrik',
+      number: '123',
+      distance: '3.1 km',
+    ),
+    EmergencyAgency(
+      id: 'agency-7',
+      title: 'PDAM',
+      subtitle: 'Gangguan Air PDAM',
+      number: '1500651',
+      distance: '5.2 km',
+    ),
+  ];
+
   Future<List<EmergencyAgency>> getAgencies() async {
     try {
       final response = await _dio.get('/darurat/instansi');
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
         final list = responseData['data'] as List<dynamic>? ?? [];
+        if (list.isEmpty) {
+          return _fallbackAgencies;
+        }
         return list.map((item) => EmergencyAgency.fromJson(item as Map<String, dynamic>)).toList();
       } else {
         throw Exception('Gagal memuat kontak darurat');
       }
     } catch (e) {
       print('API ERROR getAgencies: $e');
-      // High-fidelity fallback list
-      return [
-        EmergencyAgency(
-          id: 'agency-1',
-          title: 'Call Center 112',
-          subtitle: 'Layanan Darurat Terpadu Jawa Timur',
-          number: '112',
-          distance: '0.5 km',
-        ),
-        EmergencyAgency(
-          id: 'agency-2',
-          title: 'Polisi',
-          subtitle: 'Kepolisian Negara RI',
-          number: '110',
-          distance: '1.2 km',
-        ),
-        EmergencyAgency(
-          id: 'agency-3',
-          title: 'Ambulans/Medis',
-          subtitle: 'Layanan Kesehatan Darurat',
-          number: '119',
-          distance: '2.0 km',
-        ),
-        EmergencyAgency(
-          id: 'agency-4',
-          title: 'Pemadam Kebakaran',
-          subtitle: 'Dinas Pemadam Kebakaran',
-          number: '113',
-          distance: '2.5 km',
-        ),
-        EmergencyAgency(
-          id: 'agency-5',
-          title: 'SAR',
-          subtitle: 'Search and Rescue Indonesia',
-          number: '115',
-          distance: '4.8 km',
-        ),
-        EmergencyAgency(
-          id: 'agency-6',
-          title: 'PLN',
-          subtitle: 'Gangguan Listrik',
-          number: '123',
-          distance: '3.1 km',
-        ),
-        EmergencyAgency(
-          id: 'agency-7',
-          title: 'PDAM',
-          subtitle: 'Gangguan Air PDAM',
-          number: '1500651',
-          distance: '5.2 km',
-        ),
-      ];
+      return _fallbackAgencies;
     }
   }
 

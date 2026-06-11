@@ -62,6 +62,11 @@ app.*.map.json
 *.pem
 *.key
 *.der
+*.pfx
+*.cer
+*.cert
+/android/key.properties
+/ios/Runner/DeveloperSigning.xcconfig
 
 # Local development test scripts & error logs
 test_api.ps1

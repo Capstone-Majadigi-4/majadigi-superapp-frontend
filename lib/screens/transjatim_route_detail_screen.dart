@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'transjatim_tracking_screen.dart';
 
 class TransjatimRouteDetailScreen extends StatelessWidget {
   final String corridorId;
   final String corridorName;
+  final String corridorNumber;
 
   const TransjatimRouteDetailScreen({
     super.key,
     this.corridorId = '1',
     this.corridorName = 'Koridor 1',
+    this.corridorNumber = '',
   });
 
   @override
@@ -175,7 +178,16 @@ class TransjatimRouteDetailScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TransjatimTrackingScreen(
+                                initialCorridorId: corridorId,
+                              ),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0065FF),
                           shape: RoundedRectangleBorder(
@@ -236,7 +248,7 @@ class TransjatimRouteDetailScreen extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Text(
-              corridorId,
+              corridorNumber.isNotEmpty ? corridorNumber : (corridorId.length > 5 ? 'Bus' : corridorId),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 24,

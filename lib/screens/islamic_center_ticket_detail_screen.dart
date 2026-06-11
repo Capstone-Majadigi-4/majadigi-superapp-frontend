@@ -23,6 +23,65 @@ class _IslamicCenterTicketDetailScreenState extends State<IslamicCenterTicketDet
     });
   }
 
+  void _shareTicket() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Bagikan E-Tiket',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Inter',
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF0065FF)),
+                title: const Text('Salin Tautan E-Tiket'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Tautan e-tiket berhasil disalin ke papan klip!')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.chat_bubble_outline, color: Color(0xFF10B981)),
+                title: const Text('Bagikan ke WhatsApp (Simulasi)'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Membuka WhatsApp untuk membagikan e-tiket...')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.send_rounded, color: Color(0xFF0EA5E9)),
+                title: const Text('Bagikan ke Telegram (Simulasi)'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Membuka Telegram untuk membagikan e-tiket...')),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,7 +149,7 @@ class _IslamicCenterTicketDetailScreenState extends State<IslamicCenterTicketDet
                     ),
                     const Spacer(),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: _shareTicket,
                       icon: const Icon(Icons.share_outlined, color: Colors.white),
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.black.withOpacity(0.2),

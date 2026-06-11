@@ -174,8 +174,8 @@ class TicketQrScreen extends StatelessWidget {
                                   border: Border.all(color: const Color(0xFFE5E7EB)),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Image.network(
-                                  'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MAJADIGI-TICKET-123456',
+                                child: Image.asset(
+                                  'assets/images/destinasi wisata/isinya/QRCodeSVG.png',
                                   width: 180,
                                   height: 180,
                                 ),
@@ -205,7 +205,14 @@ class TicketQrScreen extends StatelessWidget {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('E-Ticket berhasil diunduh sebagai PDF'),
+                          backgroundColor: Color(0xFF00C950),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF0065FF),

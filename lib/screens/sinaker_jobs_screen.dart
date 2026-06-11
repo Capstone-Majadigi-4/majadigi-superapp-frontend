@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/sinaker_provider.dart';
 import '../models/sinaker_model.dart';
@@ -102,10 +103,7 @@ class _SinakerJobsScreenState extends State<SinakerJobsScreen> {
                           ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.bookmark_outline, color: Colors.white),
-                        onPressed: () {},
-                      ),
+                      _buildBookmarkButton(context),
                     ],
                   ),
                 ),
@@ -398,6 +396,27 @@ class _SinakerJobsScreenState extends State<SinakerJobsScreen> {
         fontFamily: 'Inter',
         fontWeight: FontWeight.w500,
       ),
+    );
+  }
+
+  Widget _buildBookmarkButton(BuildContext context) {
+    ModuleProvider? moduleProvider;
+    try {
+      moduleProvider = Provider.of<ModuleProvider>(context, listen: true);
+    } catch (_) {}
+    if (moduleProvider == null) {
+      return const IconButton(
+        icon: Icon(Icons.bookmark_outline, color: Colors.white),
+        onPressed: null,
+      );
+    }
+    final isFav = moduleProvider.isFavorite('sinaker');
+    return IconButton(
+      icon: Icon(
+        isFav ? Icons.bookmark : Icons.bookmark_outline,
+        color: Colors.white,
+      ),
+      onPressed: () => moduleProvider!.toggleFavorite('sinaker'),
     );
   }
 }

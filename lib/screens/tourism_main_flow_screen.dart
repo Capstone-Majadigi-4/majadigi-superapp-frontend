@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:majadigi_superapp_frontend/widgets/destination_detail_modal.dart';
 import 'package:majadigi_superapp_frontend/screens/bus_route_detail_screen.dart';
@@ -54,48 +55,62 @@ class _TourismMainFlowScreenState extends State<TourismMainFlowScreen> {
             child: Column(
               children: [
                 // Header Image Section
-                Container(
+                SizedBox(
                   width: double.infinity,
                   height: 253,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage("https://images.unsplash.com/photo-1588666309990-d68f08e3d4a6?q=80&w=1000&auto=format&fit=crop"),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.black.withOpacity(0.4), Colors.transparent],
-                      ),
-                    ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Colors.white),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Destinasi Wisata',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w600,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                       Image.asset(
+                        "assets/images/destinasi wisata/Gambar wisata bromo.png",
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF0078FF), Color(0xFF0046B2)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
                             ),
-                            const Spacer(),
-                            const Icon(Icons.bookmark_border, color: Colors.white),
-                          ],
+                          );
+                        },
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                          ),
                         ),
                       ),
-                    ),
+                      SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Destinasi Wisata',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const Spacer(),
+                              _buildBookmarkButton(context),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -158,7 +173,7 @@ class _TourismMainFlowScreenState extends State<TourismMainFlowScreen> {
                               );
                             },
                           ),
-                        const SizedBox(height: 80), // Spacing for fixed button
+                        const SizedBox(height: 120), // Spacing for fixed button
                       ],
                     ),
                   ),
@@ -167,38 +182,43 @@ class _TourismMainFlowScreenState extends State<TourismMainFlowScreen> {
             ),
           ),
 
-          // Fixed Bottom Primary Button
+          // Fixed Bottom Primary Button with Premium Full-Width Solid White Container
           Positioned(
-            left: 36,
-            right: 36,
-            bottom: 30,
+            left: 0,
+            right: 0,
+            bottom: 0,
             child: Container(
-              height: 48,
+              padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 8 : 24),
               decoration: BoxDecoration(
+                color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0065FF).withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
                   )
                 ],
               ),
-              child: ElevatedButton(
-                onPressed: () => DestinationDetailModal.show(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0065FF),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => DestinationDetailModal.show(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0065FF),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Beli E-Ticket Sekarang',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w600,
+                  child: const Text(
+                    'Beli E-Ticket Sekarang',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -381,7 +401,48 @@ class _TourismMainFlowScreenState extends State<TourismMainFlowScreen> {
               topLeft: Radius.circular(14),
               topRight: Radius.circular(14),
             ),
-            child: Image.network(imageUrl, height: 200, width: double.infinity, fit: BoxFit.cover),
+            child: imageUrl.startsWith('http')
+                ? Image.network(
+                    imageUrl,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 200,
+                        width: double.infinity,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFE2E8F0), Color(0xFFCBD5E1)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.landscape_rounded, color: Color(0xFF64748B), size: 48),
+                            const SizedBox(height: 8),
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                color: Color(0xFF64748B),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                fontFamily: 'Inter',
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                : Image.asset(
+                    imageUrl,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
@@ -520,6 +581,27 @@ class _TourismMainFlowScreenState extends State<TourismMainFlowScreen> {
           Text(text, style: const TextStyle(fontSize: 11, color: Color(0xFF0A0A0A))),
         ],
       ),
+    );
+  }
+
+  Widget _buildBookmarkButton(BuildContext context) {
+    ModuleProvider? moduleProvider;
+    try {
+      moduleProvider = Provider.of<ModuleProvider>(context, listen: true);
+    } catch (_) {}
+    if (moduleProvider == null) {
+      return const IconButton(
+        icon: Icon(Icons.bookmark_border, color: Colors.white),
+        onPressed: null,
+      );
+    }
+    final isFav = moduleProvider.isFavorite('wisata');
+    return IconButton(
+      icon: Icon(
+        isFav ? Icons.bookmark : Icons.bookmark_border,
+        color: Colors.white,
+      ),
+      onPressed: () => moduleProvider!.toggleFavorite('wisata'),
     );
   }
 }

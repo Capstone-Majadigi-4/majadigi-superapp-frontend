@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:majadigi_superapp_frontend/providers/auth_provider.dart';
 import 'package:majadigi_superapp_frontend/screens/home_screen.dart';
-import 'package:majadigi_superapp_frontend/screens/onBoarding_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/welcome_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/login_screen.dart';
 import 'package:majadigi_superapp_frontend/utils/app_colors.dart';
 import 'package:majadigi_superapp_frontend/widgets/splash_footer.dart';
@@ -40,7 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const OnBoardingScreen()),
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
       );
     }
   }

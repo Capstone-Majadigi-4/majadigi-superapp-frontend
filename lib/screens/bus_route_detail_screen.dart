@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:majadigi_superapp_frontend/screens/transjatim_payment_screen.dart';
 
 class BusRouteDetailScreen extends StatelessWidget {
   const BusRouteDetailScreen({super.key});
@@ -19,8 +20,8 @@ class BusRouteDetailScreen extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    "https://placehold.co/449x253.png",
+                  Image.asset(
+                    "assets/images/destinasi wisata/Gambar wisata bromo.png",
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
@@ -230,7 +231,18 @@ class BusRouteDetailScreen extends StatelessWidget {
             child: SizedBox(
               height: 48,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TransjatimPaymentScreen(
+                        corridorId: '9d6b1585-f8fc-4fc3-bf3e-cf7fd08a48be',
+                        amount: 'Rp 10.000',
+                        corridorName: 'Terminal Surabaya - Terminal Probolinggo',
+                      ),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0065FF),
                   shape: RoundedRectangleBorder(

@@ -16,6 +16,7 @@ import 'package:majadigi_superapp_frontend/providers/dashboard_provider.dart';
 import 'package:majadigi_superapp_frontend/providers/darurat_provider.dart';
 import 'package:majadigi_superapp_frontend/models/service_module.dart';
 import 'package:majadigi_superapp_frontend/screens/module_center_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/module_welcome_screen.dart';
 import 'package:majadigi_superapp_frontend/widgets/shimmer.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -212,6 +213,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return grouped;
   }
 
+  String? _getModuleTransitionImage(String moduleId) {
+    const Map<String, String> images = {
+      'bapenda': 'assets/images/Bapenda/gambar bapenda.png',
+      'sinaker': 'assets/images/SINAKER/Gambar SINAKER.png',
+      'rsud': 'assets/images/RSUD saiful/gambar RSUD saiful anwar.png',
+      'emergency': 'assets/images/Npmer darurat/Foto Nomer darurat.png',
+      'tbc': 'assets/images/SKRINING/Manfaat skring tbc1.png',
+      'sapabansos': 'assets/images/sapa bansos/gambar sapa bansos.png',
+      'wisata': 'assets/images/destinasi wisata/Gambar wisata bromo.png',
+      'islamic_center': 'assets/images/islamic/Islamic.png',
+    };
+    return images[moduleId];
+  }
+
   // ===================== LOGIKA PREVIEW LAYANAN =====================
   void _showModulePreviewDialog(BuildContext context, ServiceModule module) {
     bool isDownloading = false;
@@ -378,7 +393,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: ElevatedButton(
                                   onPressed: () {
                                     Navigator.pop(context);
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => module.destinationScreen));
+                                    final transitionImage = _getModuleTransitionImage(module.id);
+                                    if (transitionImage != null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ModuleWelcomeScreen(
+                                            module: module,
+                                            imagePath: transitionImage,
+                                          ),
+                                          settings: RouteSettings(name: '/${module.id}/welcome'),
+                                        ),
+                                      );
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => module.destinationScreen,
+                                          settings: RouteSettings(name: '/${module.id}'),
+                                        ),
+                                      );
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF0085FF),

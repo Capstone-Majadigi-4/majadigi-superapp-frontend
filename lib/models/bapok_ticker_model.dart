@@ -27,7 +27,7 @@ class Komoditas {
 
   factory Komoditas.fromJson(Map<String, dynamic> json) {
     return Komoditas(
-      id: json['id'] as String? ?? '',
+      id: json['id']?.toString() ?? '',
       nama: json['nama'] as String? ?? '',
       kategori: json['kategori'] as String? ?? '',
       satuan: json['satuan'] as String? ?? '',
@@ -77,7 +77,7 @@ class HargaHistori {
     return HargaHistori(
       tanggal: json['tanggal'] as String? ?? '',
       harga: (json['harga'] as num? ?? 0).toDouble(),
-      pasarId: json['pasar_id'] as String? ?? '',
+      pasarId: json['pasar_id']?.toString() ?? '',
       namaPasar: json['nama_pasar'] as String? ?? '',
     );
   }

@@ -126,7 +126,7 @@ class TransjatimScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
                         image: const DecorationImage(
-                          image: NetworkImage('https://placehold.co/800x400/0065FF/FFFFFF.png?text=Bus+Transjatim'),
+                          image: AssetImage('assets/images/Transjastim/Transjatim.png'),
                           fit: BoxFit.cover,
                         ),
                         boxShadow: [

@@ -202,7 +202,7 @@ class ModuleProvider extends ChangeNotifier {
     if (savedInstalled != null) {
       _installedModuleIds = savedInstalled;
     } else {
-      _installedModuleIds = ['bapenda', 'transjatim', 'emergency'];
+      _installedModuleIds = ['emergency'];
       await _prefs?.setStringList(_prefKey, _installedModuleIds);
     }
 
@@ -211,10 +211,28 @@ class ModuleProvider extends ChangeNotifier {
     if (savedFavs != null) {
       _favoriteModuleIds = savedFavs;
     } else {
-      _favoriteModuleIds = ['bapenda', 'transjatim', 'emergency'];
+      _favoriteModuleIds = ['emergency'];
       await _prefs?.setStringList(_favPrefKey, _favoriteModuleIds);
     }
     
+    notifyListeners();
+  }
+
+  Future<void> setInitialModulesFromOnboarding(List<String> moduleIds) async {
+    final List<String> uniqueIds = ['emergency'];
+    for (var id in moduleIds) {
+      if (id != 'emergency' && !uniqueIds.contains(id)) {
+        uniqueIds.add(id);
+      }
+    }
+    _installedModuleIds = List.from(uniqueIds);
+    _favoriteModuleIds = List.from(uniqueIds);
+    
+    if (_prefs == null) {
+      _prefs = await SharedPreferences.getInstance();
+    }
+    await _prefs?.setStringList(_prefKey, _installedModuleIds);
+    await _prefs?.setStringList(_favPrefKey, _favoriteModuleIds);
     notifyListeners();
   }
 

@@ -555,6 +555,7 @@ class _BapendaVehicleDetailScreenState extends State<BapendaVehicleDetailScreen>
                                       if (dynamicResult == true) {
                                         provider.fetchBillDetail(widget.platNomor);
                                         provider.fetchPaymentHistory();
+                                        provider.fetchVehicles();
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(

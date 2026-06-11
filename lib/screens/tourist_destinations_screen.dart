@@ -106,16 +106,31 @@ class TouristDestinationsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: double.infinity,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        image: const DecorationImage(
-                          image: NetworkImage('https://images.unsplash.com/photo-1572111504031-628bf16f6b0f?auto=format&fit=crop&q=80&w=800'),
-                          fit: BoxFit.cover,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        width: double.infinity,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            )
+                          ],
                         ),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))]
+                        child: Image.network(
+                          'https://images.unsplash.com/photo-1572111504031-628bf16f6b0f?auto=format&fit=crop&q=80&w=800',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: const Color(0xFFCBD5E1),
+                              alignment: Alignment.center,
+                              child: const Icon(Icons.landscape_rounded, size: 48, color: Color(0xFF64748B)),
+                            );
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),

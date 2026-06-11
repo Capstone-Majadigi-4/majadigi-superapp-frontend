@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:majadigi_superapp_frontend/widgets/price_alert_modal.dart';
 import 'package:majadigi_superapp_frontend/widgets/custom_button.dart';
 
@@ -56,10 +58,7 @@ class _SiskaperbapoDetailScreenState extends State<SiskaperbapoDetailScreen> {
                           ),
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.bookmark_border, color: Colors.white),
-                        onPressed: () {},
-                      ),
+                      _buildBookmarkButton(context),
                     ],
                   ),
                 ),
@@ -321,7 +320,7 @@ class _SiskaperbapoDetailScreenState extends State<SiskaperbapoDetailScreen> {
                   color: const Color(0xFFF3F4F6),
                   borderRadius: BorderRadius.circular(14),
                   image: const DecorationImage(
-                    image: NetworkImage("https://placehold.co/64x64.png"),
+                    image: AssetImage("assets/images/Home/Favorit/gambar makanan.png"),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -544,6 +543,27 @@ class _SiskaperbapoDetailScreenState extends State<SiskaperbapoDetailScreen> {
       ),
     );
   }
+
+  Widget _buildBookmarkButton(BuildContext context) {
+    ModuleProvider? moduleProvider;
+    try {
+      moduleProvider = Provider.of<ModuleProvider>(context, listen: true);
+    } catch (_) {}
+    if (moduleProvider == null) {
+      return const IconButton(
+        icon: Icon(Icons.bookmark_border, color: Colors.white),
+        onPressed: null,
+      );
+    }
+    final isFav = moduleProvider.isFavorite('siskaperbapo');
+    return IconButton(
+      icon: Icon(
+        isFav ? Icons.bookmark : Icons.bookmark_border,
+        color: Colors.white,
+      ),
+      onPressed: () => moduleProvider!.toggleFavorite('siskaperbapo'),
+    );
+  }
 }
 
 class DualLineChartPainter extends CustomPainter {
@@ -587,6 +607,7 @@ class DualLineChartPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
+    final fillPath = Path();
     final points = <Offset>[];
     
     for (var i = 0; i < values.length; i++) {
@@ -594,10 +615,34 @@ class DualLineChartPainter extends CustomPainter {
     }
 
     path.moveTo(points[0].dx, points[0].dy);
-    for (var i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx, points[i].dy);
+    fillPath.moveTo(points[0].dx, size.height);
+    fillPath.lineTo(points[0].dx, points[0].dy);
+
+    for (var i = 0; i < points.length - 1; i++) {
+      final p0 = points[i];
+      final p1 = points[i + 1];
+      final cp1 = Offset(p0.dx + (p1.dx - p0.dx) / 2, p0.dy);
+      final cp2 = Offset(p0.dx + (p1.dx - p0.dx) / 2, p1.dy);
+      path.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, p1.dx, p1.dy);
+      fillPath.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, p1.dx, p1.dy);
     }
 
+    fillPath.lineTo(points.last.dx, size.height);
+    fillPath.close();
+
+    // Draw area gradient fill
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          color.withOpacity(0.15),
+          color.withOpacity(0.0),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, paint);
 
     for (var point in points) {

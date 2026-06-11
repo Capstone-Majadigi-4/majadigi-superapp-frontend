@@ -9,31 +9,40 @@ class BapendaRepository {
   static final Map<String, String> _paymentStatusOverride = {};
 
   Future<List<BapendaVehicle>> getVehicles() async {
+    final defaultVehicle = BapendaVehicle(
+      platNomor: 'L 1234 AB',
+      merk: 'HONDA',
+      tipe: 'VARIO 150',
+      tanggalJatuhTempo: '15 Mei 2026',
+      isWarning: true,
+      statusText: 'Jatuh tempo H-8',
+      pemilik: 'Budi Sintara',
+      noRangka: 'MH1JM3118KK123456',
+      noMesin: 'JM31E1234567',
+      tahun: 2021,
+    );
+
+    List<BapendaVehicle> vehiclesList = [];
     try {
       final response = await _dio.get('/bapenda/kendaraan');
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
         final list = responseData['data'] as List<dynamic>? ?? [];
-        return list.map((item) => BapendaVehicle.fromJson(item as Map<String, dynamic>)).toList();
+        vehiclesList = list.map((item) => BapendaVehicle.fromJson(item as Map<String, dynamic>)).toList();
+        
+        // Ensure default vehicle is always in the list
+        final hasDefault = vehiclesList.any((v) => v.platNomor.replaceAll(' ', '').toLowerCase() == 'l1234ab');
+        if (!hasDefault) {
+          vehiclesList.insert(0, defaultVehicle);
+        }
       } else {
         throw Exception('Gagal mengambil data kendaraan');
       }
     } catch (e) {
       print('API ERROR getVehicles: $e');
       // Mock Fallback
-      return [
-        BapendaVehicle(
-          platNomor: 'L 1234 AB',
-          merk: 'HONDA',
-          tipe: 'VARIO 150',
-          tanggalJatuhTempo: '15 Mei 2026',
-          isWarning: true,
-          statusText: 'Jatuh tempo H-8',
-          pemilik: 'Budi Sintara',
-          noRangka: 'MH1JM3118KK123456',
-          noMesin: 'JM31E1234567',
-          tahun: 2021,
-        ),
+      vehiclesList = [
+        defaultVehicle,
         BapendaVehicle(
           platNomor: 'W 5678 CD',
           merk: 'TOYOTA',
@@ -48,6 +57,27 @@ class BapendaRepository {
         ),
       ];
     }
+
+    // Apply payment overrides dynamically
+    for (var i = 0; i < vehiclesList.length; i++) {
+      final plat = vehiclesList[i].platNomor;
+      if (_paymentStatusOverride[plat] == 'Lunas') {
+        vehiclesList[i] = BapendaVehicle(
+          platNomor: vehiclesList[i].platNomor,
+          merk: vehiclesList[i].merk,
+          tipe: vehiclesList[i].tipe,
+          tanggalJatuhTempo: vehiclesList[i].tanggalJatuhTempo,
+          isWarning: false,
+          statusText: 'Aktif',
+          pemilik: vehiclesList[i].pemilik,
+          noRangka: vehiclesList[i].noRangka,
+          noMesin: vehiclesList[i].noMesin,
+          tahun: vehiclesList[i].tahun,
+        );
+      }
+    }
+
+    return vehiclesList;
   }
 
   Future<BapendaBillDetail> getBillDetail(String platNomor) async {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:majadigi_superapp_frontend/screens/login_screen.dart';
 
 class OnBoardingScreen extends StatefulWidget {
@@ -41,6 +43,38 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   }
 
   void _completeOnboarding() async {
+    final List<String> moduleIds = [];
+    for (final catId in _selectedCategories) {
+      switch (catId) {
+        case 0: // Kesehatan
+          moduleIds.add('rsud');
+          moduleIds.add('tbc');
+          break;
+        case 1: // Transportasi
+          moduleIds.add('transjatim');
+          break;
+        case 2: // Pajak & Administrasi
+          moduleIds.add('bapenda');
+          moduleIds.add('siskaperbapo');
+          break;
+        case 3: // Bantuan Sosial
+          moduleIds.add('sapabansos');
+          break;
+        case 4: // Pariwisata & Budaya
+          moduleIds.add('wisata');
+          moduleIds.add('islamic_center');
+          break;
+        case 5: // Lowongan Kerja
+          moduleIds.add('sinaker');
+          break;
+      }
+    }
+
+    if (mounted) {
+      await Provider.of<ModuleProvider>(context, listen: false)
+          .setInitialModulesFromOnboarding(moduleIds);
+    }
+
     try {
       await Permission.location.request();
     } catch (e) {

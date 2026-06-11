@@ -86,4 +86,10 @@ class TransJatimProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void updateArmadaList(List<Armada> armadas) {
+    _armadaList = armadas;
+    notifyListeners();
+  }
 }
+

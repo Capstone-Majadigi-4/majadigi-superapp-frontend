@@ -127,7 +127,7 @@ class BapendaScreen extends StatelessWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
                           image: const DecorationImage(
-                            image: NetworkImage('https://placehold.co/800x400/0065FF/FFFFFF.png?text=Bapenda+Jatim'),
+                            image: AssetImage('assets/images/Bapenda/gambar bapenda.png'),
                             fit: BoxFit.cover,
                           ),
                           boxShadow: [

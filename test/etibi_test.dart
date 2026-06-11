@@ -8,6 +8,44 @@ import 'package:majadigi_superapp_frontend/models/etibi_model.dart';
 import 'package:majadigi_superapp_frontend/screens/tbc_screening_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/tbc_questions_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/tbc_reminder_screen.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
+import 'package:majadigi_superapp_frontend/models/service_module.dart';
+
+class MockModuleProvider extends ChangeNotifier implements ModuleProvider {
+  final List<String> _favorites = [];
+
+  @override
+  List<String> get installedModuleIds => [];
+  @override
+  List<String> get favoriteModuleIds => _favorites;
+  @override
+  List<ServiceModule> get availableModules => [];
+  @override
+  List<ServiceModule> get installedModules => [];
+  @override
+  List<ServiceModule> get favoriteModules => [];
+  @override
+  Future<void> installModule(String id) async {}
+  @override
+  Future<void> uninstallModule(String id) async {}
+  @override
+  Future<void> setInitialModulesFromOnboarding(List<String> moduleIds) async {}
+  @override
+  bool isInstalled(String id) => false;
+  
+  @override
+  Future<void> toggleFavorite(String id) async {
+    if (_favorites.contains(id)) {
+      _favorites.remove(id);
+    } else {
+      _favorites.add(id);
+    }
+    notifyListeners();
+  }
+
+  @override
+  bool isFavorite(String id) => _favorites.contains(id);
+}
 
 class MockHttpOverrides extends HttpOverrides {
   @override
@@ -241,8 +279,11 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: ChangeNotifierProvider<EtibiProvider>.value(
-            value: mockProvider,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<EtibiProvider>.value(value: mockProvider),
+              ChangeNotifierProvider<ModuleProvider>.value(value: MockModuleProvider()),
+            ],
             child: const TbcScreeningScreen(),
           ),
         ),
@@ -252,8 +293,8 @@ void main() {
 
       // Check dynamic risk card
       expect(find.text('Hasil Skrining: Berisiko TBC'), findsOneWidget);
-      expect(find.text('Mulai Skrining Mandiri'), findsOneWidget);
-      expect(find.text('Kalender & Pengingat Obat'), findsOneWidget);
+      expect(find.text('Mulai Skrining'), findsOneWidget);
+      expect(find.text('Pengingat Obat'), findsOneWidget);
 
       // Check change in result
       mockProvider.setMockLastScreeningResult(false); // low risk
@@ -281,23 +322,27 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Check categories and questions are rendered
-      expect(find.text('Keluhan yang dirasakan'), findsOneWidget);
-      expect(find.text('Batuk berdarah'), findsOneWidget);
-      expect(find.text('Informasi Lainnya'), findsOneWidget);
-      expect(find.text('Pernah kontak dengan pasien TB'), findsOneWidget);
+      // Check first question is rendered formatted
+      expect(find.text('Apakah Anda mengalami batuk berdarah?'), findsOneWidget);
 
-      // Tap Yes on the first question
-      // In TbcQuestionCard, there are likely "Iya" and "Tidak" buttons
-      expect(find.text('Iya'), findsNWidgets(2));
-      await tester.tap(find.text('Iya').first);
+      // Tap Ya on the first question
+      expect(find.text('Ya'), findsOneWidget);
+      await tester.tap(find.text('Ya'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
 
-      // Tap 'Lihat Hasil' button to submit
-      await tester.tap(find.text('Lihat Hasil'));
+      // Check second question is rendered formatted
+      expect(find.text('Apakah Anda pernah melakukan kontak satu rumah dengan pasien TBC?'), findsOneWidget);
+
+      // Tap Tidak on the second question
+      expect(find.text('Tidak'), findsOneWidget);
+      await tester.tap(find.text('Tidak'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpAndSettle();
 
-      // Verify result dialog displays risk result since we chose 'Iya'
+      // Verify result dialog displays since last question submit was triggered
       expect(find.text('Hasil Skrining'), findsOneWidget);
     }, MockHttpOverrides());
   });

@@ -146,7 +146,8 @@ class AuthProvider extends ChangeNotifier {
         noHp: noHp,
       );
       
-      if (result['status'] == 'success') {
+      if (result['status'] != 'error' && result['status'] != 'fail') {
+        _errorMessage = result['message'] ?? 'Registrasi berhasil!';
         _isLoading = false;
         notifyListeners();
         return true;

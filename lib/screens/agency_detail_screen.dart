@@ -129,8 +129,8 @@ class _AgencyDetailScreenState extends State<AgencyDetailScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(20),
-                          child: Image.network(
-                            "https://placehold.co/350x200.png", // Image representing the office/service
+                          child: Image.asset(
+                            "assets/images/Bapenda/gambar bapenda.png",
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Container(

@@ -81,6 +81,39 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0065FF)),
         useMaterial3: true,
       ),
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        final isWebOrTablet = mediaQuery.size.width > 600;
+        final double constrainedWidth = isWebOrTablet ? 600 : mediaQuery.size.width;
+        
+        return Container(
+          color: const Color(0xFFECECF0), // Outer background for margins
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constrainedWidth),
+              child: MediaQuery(
+                data: mediaQuery.copyWith(
+                  size: Size(constrainedWidth, mediaQuery.size.height),
+                ),
+                child: Container(
+                  decoration: isWebOrTablet
+                      ? const BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 30,
+                              spreadRadius: 5,
+                            )
+                          ],
+                        )
+                      : null,
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
       home: const SplashScreen(),
     );
   }

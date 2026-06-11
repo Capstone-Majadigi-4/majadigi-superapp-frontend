@@ -48,7 +48,7 @@ class Acara {
 
   factory Acara.fromJson(Map<String, dynamic> json) {
     return Acara(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       judul: json['judul'] ?? json['title'] ?? '',
       tanggal: json['tanggal'] ?? json['date'] ?? '',
       kuotaMaksimal: json['kuota_maksimal'] ?? json['capacity'] ?? 0,
@@ -96,7 +96,7 @@ class Fasilitas {
     }
 
     return Fasilitas(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       nama: json['nama'] ?? json['name'] ?? '',
       kapasitas: json['kapasitas'] ?? json['capacity'] ?? 0,
       hargaPerHari: harga,
@@ -182,9 +182,9 @@ class BookingFasilitas {
 
   factory BookingFasilitas.fromJson(Map<String, dynamic> json) {
     return BookingFasilitas(
-      id: json['id'] ?? '',
-      fasilitasId: json['fasilitas_id'] ?? '',
-      userNik: json['user_nik'] ?? '',
+      id: json['id']?.toString() ?? '',
+      fasilitasId: json['fasilitas_id']?.toString() ?? '',
+      userNik: json['user_nik']?.toString() ?? '',
       namaAcara: json['nama_acara'] ?? '',
       tanggalMulai: json['tanggal_mulai'] ?? '',
       tanggalSelesai: json['tanggal_selesai'] ?? '',
@@ -241,9 +241,9 @@ class PendaftaranAcara {
 
   factory PendaftaranAcara.fromJson(Map<String, dynamic> json) {
     return PendaftaranAcara(
-      id: json['id'] ?? '',
-      acaraId: json['acara_id'] ?? '',
-      userNik: json['user_nik'] ?? '',
+      id: json['id']?.toString() ?? '',
+      acaraId: json['acara_id']?.toString() ?? '',
+      userNik: json['user_nik']?.toString() ?? '',
       qrPayload: json['qr_payload'] ?? '',
       status: json['status'] ?? '',
       daftarAt: json['daftar_at'] ?? '',

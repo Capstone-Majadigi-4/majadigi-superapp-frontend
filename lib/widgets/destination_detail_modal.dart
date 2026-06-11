@@ -563,6 +563,35 @@ class _DestinationDetailModalState extends State<DestinationDetailModal> {
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 180,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFE2E8F0), Color(0xFFCBD5E1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.landscape_rounded, color: Color(0xFF64748B), size: 40),
+                      const SizedBox(height: 8),
+                      Text(
+                        dest.title,
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          fontFamily: 'Inter',
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
           Padding(

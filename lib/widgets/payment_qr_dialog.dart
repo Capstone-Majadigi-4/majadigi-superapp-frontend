@@ -192,8 +192,8 @@ class PaymentQrDialog extends StatelessWidget {
               child: Column(
                 children: [
                   CustomButton(
-                    text: 'Unduh QR Code',
-                    icon: Icons.file_download_outlined,
+                    text: 'Saya Sudah Membayar',
+                    icon: Icons.check_circle_outline,
                     backgroundColor: const Color(0xFF155DFC),
                     height: 44,
                     fontSize: 14,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:majadigi_superapp_frontend/providers/rsud_provider.dart';
 import 'package:majadigi_superapp_frontend/widgets/room_stat_card.dart';
@@ -205,16 +206,34 @@ class _RsudRuangInapScreenState extends State<RsudRuangInapScreen> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.bookmark_border, color: Colors.white),
-                    onPressed: () {},
-                  ),
+                  _buildBookmarkButton(context),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBookmarkButton(BuildContext context) {
+    ModuleProvider? moduleProvider;
+    try {
+      moduleProvider = Provider.of<ModuleProvider>(context, listen: true);
+    } catch (_) {}
+    if (moduleProvider == null) {
+      return const IconButton(
+        icon: Icon(Icons.bookmark_border, color: Colors.white),
+        onPressed: null,
+      );
+    }
+    final isFav = moduleProvider.isFavorite('rsud');
+    return IconButton(
+      icon: Icon(
+        isFav ? Icons.bookmark : Icons.bookmark_border,
+        color: Colors.white,
+      ),
+      onPressed: () => moduleProvider!.toggleFavorite('rsud'),
     );
   }
 }

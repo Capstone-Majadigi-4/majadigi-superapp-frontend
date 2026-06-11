@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:majadigi_superapp_frontend/providers/transjatim_provider.dart';
 import 'package:majadigi_superapp_frontend/widgets/custom_button.dart';
@@ -22,6 +23,41 @@ class TransjatimPaymentScreen extends StatefulWidget {
 }
 
 class _TransjatimPaymentScreenState extends State<TransjatimPaymentScreen> {
+  Timer? _timer;
+  int _secondsRemaining = 291; // 4 minutes 51 seconds
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        if (mounted) {
+          setState(() {
+            _secondsRemaining--;
+          });
+        }
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _formatTime(int seconds) {
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,12 +114,12 @@ class _TransjatimPaymentScreenState extends State<TransjatimPaymentScreen> {
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.access_time, color: Color(0xFF155DFC), size: 18),
-                      SizedBox(width: 8),
+                    children: [
+                      const Icon(Icons.access_time, color: Color(0xFF155DFC), size: 18),
+                      const SizedBox(width: 8),
                       Text(
-                        '04:51',
-                        style: TextStyle(
+                        _formatTime(_secondsRemaining),
+                        style: const TextStyle(
                           color: Color(0xFF155DFC),
                           fontSize: 18,
                           fontFamily: 'Consolas',
@@ -113,8 +149,8 @@ class _TransjatimPaymentScreenState extends State<TransjatimPaymentScreen> {
                       ),
                     ],
                   ),
-                  child: Image.network(
-                    'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=TRANSJATIM-TICKET',
+                  child: Image.asset(
+                    'assets/images/Transjastim/QRCodeSVG.png',
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -171,8 +207,8 @@ class _TransjatimPaymentScreenState extends State<TransjatimPaymentScreen> {
                 
                 // Action Buttons
                  CustomButton(
-                  text: 'Unduh QR Code',
-                  icon: Icons.download_rounded,
+                  text: 'Saya Sudah Membayar',
+                  icon: Icons.check_circle_outline,
                   backgroundColor: const Color(0xFF155DFC),
                   height: 48,
                   fontSize: 14,

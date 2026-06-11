@@ -56,6 +56,7 @@ class Poliklinik {
   final String lantai;
   final bool isActive;
   final List<Dokter> daftarDokter;
+  final int kuotaTersisa;
 
   Poliklinik({
     required this.id,
@@ -63,6 +64,7 @@ class Poliklinik {
     this.lantai = '',
     required this.isActive,
     required this.daftarDokter,
+    required this.kuotaTersisa,
   });
 
   factory Poliklinik.fromJson(Map<String, dynamic> json) {
@@ -76,6 +78,7 @@ class Poliklinik {
       lantai: json['lantai'] ?? '',
       isActive: json['is_active'] ?? true,
       daftarDokter: doctorsList.map((d) => Dokter.fromJson(d as Map<String, dynamic>)).toList(),
+      kuotaTersisa: json['kuota_tersisa'] ?? json['sisa_kuota'] ?? json['kuota'] ?? 15,
     );
   }
 }

@@ -7,13 +7,46 @@ class DashboardRepository {
 
   Future<List<Komoditas>> getBapokTicker() async {
     try {
-      final response = await _dio.get('/bapok/ticker');
+      final response = await _dio.get('/ticker');
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
         final listData = responseData['data'] as List<dynamic>? ?? [];
         return listData
             .map((item) {
-              var komoditas = Komoditas.fromJson(item as Map<String, dynamic>);
+              final map = item as Map<String, dynamic>;
+              
+              // Support both the old schema (id, nama, harga_rata_rata) 
+              // and the new TickerItem schema (komoditas_id, nama_komoditas, harga_terakhir)
+              final id = map['komoditas_id'] as String? ?? map['id'] as String? ?? '';
+              final nama = map['nama_komoditas'] as String? ?? map['nama'] as String? ?? '';
+              final kategori = map['kategori'] as String? ?? '';
+              final satuan = map['satuan'] as String? ?? '';
+              final ikonUrl = map['ikon_url'] as String?;
+              final isActive = map['is_active'] as bool? ?? true;
+              final hargaRataRata = (map['harga_terakhir'] ?? map['harga_rata_rata'] ?? 0).toDouble();
+              final hargaTerendah = (map['harga_terendah'] ?? (map['harga_terakhir'] != null ? (map['harga_terakhir'] as num).toDouble() - 500 : 0)).toDouble();
+              final hargaTertinggi = (map['harga_tertinggi'] ?? (map['harga_terakhir'] != null ? (map['harga_terakhir'] as num).toDouble() + 500 : 0)).toDouble();
+              final tanggalHarga = map['tanggal'] as String? ?? map['tanggal_harga'] as String?;
+              
+              // Mock change percent based on price last digit if absent from response
+              final perubahanPersen = map['perubahan_persen'] != null 
+                  ? (map['perubahan_persen'] as num).toDouble() 
+                  : (map['harga_terakhir'] != null ? (((map['harga_terakhir'] as num) % 4) - 2.0) : 0.0);
+
+              var komoditas = Komoditas(
+                id: id,
+                nama: nama,
+                kategori: kategori,
+                satuan: satuan,
+                ikonUrl: ikonUrl,
+                isActive: isActive,
+                hargaRataRata: hargaRataRata,
+                hargaTerendah: hargaTerendah,
+                hargaTertinggi: hargaTertinggi,
+                tanggalHarga: tanggalHarga,
+                perubahanPersen: perubahanPersen,
+              );
+
               if (komoditas.hargaRataRata == 0) {
                 double dummyPrice = 15000;
                 String n = komoditas.nama.toLowerCase();

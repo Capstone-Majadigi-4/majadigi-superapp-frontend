@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/bapok_provider.dart';
 
 class PriceAlertModal extends StatefulWidget {
   final String commodityName;
@@ -235,9 +237,81 @@ class _PriceAlertModalState extends State<PriceAlertModal> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {
-                  // Activate Alert logic
+                onPressed: () async {
+                  final text = _priceController.text.trim();
+                  final nominal = double.tryParse(text);
+                  if (nominal == null || nominal <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Silakan masukkan nominal batas harga yang valid'),
+                        backgroundColor: Color(0xFFEF4444),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final provider = Provider.of<BapokProvider>(context, listen: false);
+                  String komoditasId = '1';
+                  if (provider.komoditasList.isNotEmpty) {
+                    final matched = provider.komoditasList.firstWhere(
+                      (c) => c.nama.toLowerCase().contains(widget.commodityName.toLowerCase()) ||
+                             widget.commodityName.toLowerCase().contains(c.nama.toLowerCase()),
+                      orElse: () => provider.komoditasList.first,
+                    );
+                    komoditasId = matched.id;
+                  } else {
+                    final nameLower = widget.commodityName.toLowerCase();
+                    if (nameLower.contains('beras')) {
+                      komoditasId = '1';
+                    } else if (nameLower.contains('gula')) {
+                      komoditasId = '2';
+                    } else if (nameLower.contains('minyak')) {
+                      komoditasId = '3';
+                    } else if (nameLower.contains('ayam')) {
+                      komoditasId = '4';
+                    } else if (nameLower.contains('sapi')) {
+                      komoditasId = '5';
+                    } else if (nameLower.contains('gas') || nameLower.contains('lpg')) {
+                      komoditasId = '6';
+                    }
+                  }
+
+                  final tipe = _isDown ? 'turun_dibawah' : 'naik_diatas';
+
                   Navigator.pop(context);
+
+                  final success = await provider.createPriceAlert(
+                    komoditasId,
+                    nominal,
+                    tipe,
+                  );
+
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Pengingat harga ${widget.commodityName} berhasil disimpan'),
+                        backgroundColor: const Color(0xFF22C55E),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          provider.errorCreatingAlert ?? 'Gagal menyimpan pengingat harga',
+                        ),
+                        backgroundColor: const Color(0xFFEF4444),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFF97316),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:majadigi_superapp_frontend/providers/transjatim_provider.dart';
 import 'package:majadigi_superapp_frontend/widgets/shimmer.dart';
@@ -83,16 +84,7 @@ class _TransjatimRouteScreenState extends State<TransjatimRouteScreen> {
                               ),
                             ),
                             const Spacer(),
-                            IconButton(
-                              onPressed: () {},
-                              icon: const Icon(Icons.bookmark_border, color: Colors.white),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.white.withOpacity(0.2),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
+                            _buildBookmarkButton(context),
                           ],
                         ),
                       ),
@@ -184,6 +176,7 @@ class _TransjatimRouteScreenState extends State<TransjatimRouteScreen> {
                             if (numStr.isEmpty) numStr = '${index + 1}';
 
                             return _buildCorridorCard(
+                              corridorId: koridor.id,
                               number: numStr,
                               title: koridor.nama,
                               price: koridor.tarif,
@@ -238,6 +231,7 @@ class _TransjatimRouteScreenState extends State<TransjatimRouteScreen> {
   }
 
   Widget _buildCorridorCard({
+    required String corridorId,
     required String number,
     required String title,
     required String price,
@@ -408,8 +402,9 @@ class _TransjatimRouteScreenState extends State<TransjatimRouteScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => TransjatimRouteDetailScreen(
-                    corridorId: number,
+                    corridorId: corridorId,
                     corridorName: title,
+                    corridorNumber: number,
                   ),
                 ),
               );
@@ -557,6 +552,44 @@ class _TransjatimRouteScreenState extends State<TransjatimRouteScreen> {
             style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.5),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBookmarkButton(BuildContext context) {
+    ModuleProvider? moduleProvider;
+    try {
+      moduleProvider = Provider.of<ModuleProvider>(context, listen: true);
+    } catch (_) {}
+    if (moduleProvider == null) {
+      return IconButton(
+        onPressed: null,
+        icon: const Icon(
+          Icons.bookmark_border,
+          color: Colors.white,
+        ),
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+    final isFav = moduleProvider.isFavorite('transjatim');
+    return IconButton(
+      onPressed: () {
+        moduleProvider!.toggleFavorite('transjatim');
+      },
+      icon: Icon(
+        isFav ? Icons.bookmark : Icons.bookmark_border,
+        color: Colors.white,
+      ),
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.white.withOpacity(0.2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:async';
 import 'package:majadigi_superapp_frontend/providers/rsud_provider.dart';
 import 'package:majadigi_superapp_frontend/models/rsud_model.dart';
 import 'package:majadigi_superapp_frontend/screens/rsud_ambil_antrean_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/rsud_live_queue_detail_screen.dart';
 
 class RsudQueueStatusScreen extends StatefulWidget {
   const RsudQueueStatusScreen({super.key});
@@ -202,7 +204,7 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
                         {'name': 'Poli Anak', 'count': '12 Antrean', 'estimation': 'Estimasi: 40 menit'},
                       ];
 
-                      final List<Map<String, String>> clinicsToRender = [];
+                      final List<Map<String, dynamic>> clinicsToRender = [];
 
                       if (provider.poliklinikList.isEmpty) {
                         for (var item in defaultClinics) {
@@ -219,6 +221,8 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
                             'name': name,
                             'count': count,
                             'estimation': estimation,
+                            'id': 'poli-umum-id',
+                            'doctors': <Dokter>[],
                           });
                         }
                       } else {
@@ -241,6 +245,8 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
                             'name': name,
                             'count': count,
                             'estimation': estimation,
+                            'id': poli.id,
+                            'doctors': poli.daftarDokter,
                           });
                         }
                       }
@@ -248,7 +254,23 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
                       final List<Widget> children = [];
                       for (int i = 0; i < clinicsToRender.length; i++) {
                         final item = clinicsToRender[i];
-                        children.add(_buildRealTimeItem(item['name']!, item['count']!, item['estimation']!));
+                        children.add(
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => RsudLiveQueueDetailScreen(
+                                    poliName: item['name']!,
+                                    poliId: item['id']!,
+                                    doctors: item['doctors'] as List<Dokter>,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: _buildRealTimeItem(item['name']!, item['count']!, item['estimation']!),
+                          ),
+                        );
                         if (i < clinicsToRender.length - 1) {
                           children.add(const SizedBox(height: 12));
                         }
@@ -315,10 +337,7 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.bookmark_border, color: Colors.white),
-                    onPressed: () {},
-                  ),
+                  _buildBookmarkButton(context),
                 ],
               ),
             ),
@@ -688,6 +707,27 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBookmarkButton(BuildContext context) {
+    ModuleProvider? moduleProvider;
+    try {
+      moduleProvider = Provider.of<ModuleProvider>(context, listen: true);
+    } catch (_) {}
+    if (moduleProvider == null) {
+      return const IconButton(
+        icon: Icon(Icons.bookmark_border, color: Colors.white),
+        onPressed: null,
+      );
+    }
+    final isFav = moduleProvider.isFavorite('rsud');
+    return IconButton(
+      icon: Icon(
+        isFav ? Icons.bookmark : Icons.bookmark_border,
+        color: Colors.white,
+      ),
+      onPressed: () => moduleProvider!.toggleFavorite('rsud'),
     );
   }
 }

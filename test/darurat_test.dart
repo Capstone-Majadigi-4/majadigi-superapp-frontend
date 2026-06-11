@@ -8,6 +8,44 @@ import 'package:majadigi_superapp_frontend/providers/darurat_provider.dart';
 import 'package:majadigi_superapp_frontend/models/darurat_model.dart';
 import 'package:majadigi_superapp_frontend/screens/emergency_numbers_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/emergency_contact_list_screen.dart';
+import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
+import 'package:majadigi_superapp_frontend/models/service_module.dart';
+
+class MockModuleProvider extends ChangeNotifier implements ModuleProvider {
+  final List<String> _favorites = [];
+
+  @override
+  List<String> get installedModuleIds => [];
+  @override
+  List<String> get favoriteModuleIds => _favorites;
+  @override
+  List<ServiceModule> get availableModules => [];
+  @override
+  List<ServiceModule> get installedModules => [];
+  @override
+  List<ServiceModule> get favoriteModules => [];
+  @override
+  Future<void> installModule(String id) async {}
+  @override
+  Future<void> uninstallModule(String id) async {}
+  @override
+  Future<void> setInitialModulesFromOnboarding(List<String> moduleIds) async {}
+  @override
+  bool isInstalled(String id) => false;
+  
+  @override
+  Future<void> toggleFavorite(String id) async {
+    if (_favorites.contains(id)) {
+      _favorites.remove(id);
+    } else {
+      _favorites.add(id);
+    }
+    notifyListeners();
+  }
+
+  @override
+  bool isFavorite(String id) => _favorites.contains(id);
+}
 
 class MockHttpOverrides extends HttpOverrides {
   @override
@@ -272,8 +310,11 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: ChangeNotifierProvider<DaruratProvider>.value(
-            value: mockProvider,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<DaruratProvider>.value(value: mockProvider),
+              ChangeNotifierProvider<ModuleProvider>.value(value: MockModuleProvider()),
+            ],
             child: const EmergencyNumbersScreen(),
           ),
         ),

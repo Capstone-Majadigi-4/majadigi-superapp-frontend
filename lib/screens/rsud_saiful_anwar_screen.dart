@@ -47,12 +47,12 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'RSUD Dr. Saiful Anwar',
+                            'RSUD Dr Saiful Anwar',
                             style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Layanan Kesehatan Rumah Sakit',
+                            'Layanan Saiful Anwar Provinsi Jawa Timur',
                             style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, fontFamily: 'Inter'),
                           ),
                         ],
@@ -109,32 +109,64 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
                   children: [
                     Container(
                       width: double.infinity,
-                      height: 180,
+                      height: 250,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        image: const DecorationImage(
-                          image: NetworkImage('https://images.unsplash.com/photo-1538108149393-fbbd81895907?auto=format&fit=crop&q=80&w=800'),
-                          fit: BoxFit.cover,
-                        ),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
-                        ]
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                              child: Image.asset(
+                                'assets/images/sapabansos_banner.png',
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'Layanan RSUD Dr Saiful Anwar',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                    fontFamily: 'Inter',
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'RSUD Dr. Saiful Anwar Provinsi Jawa Timur',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade500,
+                                    fontFamily: 'Inter',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Antrean Online & Jadwal',
-                      style: TextStyle(color: Color(0xFF1E293B), fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Gunakan layanan kami untuk mendaftar poli spesialis secara daring, sehingga tidak perlu mengantre lama di rumah sakit.',
-                      style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontFamily: 'Inter', height: 1.50),
-                    ),
-                    const SizedBox(height: 32),
                     _buildGradientButton(
-                      title: 'Ambil Antrean Poli',
-                      icon: Icons.personal_injury_rounded,
+                      title: 'Ambil Antrean',
+                      icon: Icons.badge_outlined,
+                      iconColor: const Color(0xFFEAB308),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -144,8 +176,9 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     _buildGradientButton(
-                      title: 'Ketersediaan Kamar Inap',
-                      icon: Icons.bed_rounded,
+                      title: 'Informasi Ruang inap',
+                      icon: Icons.local_hospital_rounded,
+                      iconColor: const Color(0xFFEF4444),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -163,37 +196,61 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGradientButton({required String title, required IconData icon, required VoidCallback onTap}) {
+  Widget _buildGradientButton({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
+          colors: [Color(0xFF0078FF), Color(0xFF0046B2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: const Color(0xFF3B82F6).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))]
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0046B2).withOpacity(0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: Colors.white, size: 20),
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: iconColor, size: 22),
             ),
             const SizedBox(width: 16),
-            Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                fontFamily: 'Inter',
+              ),
+            ),
             const Spacer(),
-            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
           ],
         ),
       ),

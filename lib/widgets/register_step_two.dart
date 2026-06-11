@@ -32,6 +32,69 @@ class RegisterStepTwo extends StatefulWidget {
 
 class _RegisterStepTwoState extends State<RegisterStepTwo> {
 
+  void _showGenderPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'Pilih Jenis Kelamin',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.male, color: Color(0xFF0065FF)),
+              title: const Text('Laki-laki'),
+              onTap: () {
+                setState(() {
+                  widget.genderController.text = 'Laki-laki';
+                });
+                Navigator.pop(context);
+              },
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.female, color: Color(0xFFEC4899)),
+              title: const Text('Perempuan'),
+              onTap: () {
+                setState(() {
+                  widget.genderController.text = 'Perempuan';
+                });
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -101,6 +164,8 @@ class _RegisterStepTwoState extends State<RegisterStepTwo> {
             hintText: 'Jenis Kelamin',
             controller: widget.genderController,
             suffixIcon: Icons.keyboard_arrow_down,
+            readOnly: true,
+            onTap: () => _showGenderPicker(context),
           ),
           const SizedBox(height: 16),
           CustomTextField(

@@ -47,7 +47,7 @@ class _EmergencyContactListScreenState extends State<EmergencyContactListScreen>
             child: Container(
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage("https://placehold.co/449x253/0065FF/FFFFFF.png?text=Nomor+Darurat"),
+                  image: AssetImage("assets/images/Npmer darurat/Foto Nomer darurat.png"),
                   fit: BoxFit.cover,
                 ),
               ),

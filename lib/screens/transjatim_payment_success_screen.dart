@@ -128,7 +128,7 @@ class _TransjatimPaymentSuccessScreenState extends State<TransjatimPaymentSucces
                           route: 'Koridor Probolinggo • Terminal Probolinggo',
                           distance: '15 km',
                           price: 'Rp 10.000',
-                          imageUrl: 'https://placehold.co/600x400.png?text=Gunung+Bromo',
+                          imageUrl: 'assets/images/destinasi wisata/Gambar wisata bromo.png',
                         ),
 
                         const SizedBox(height: 40),
@@ -187,8 +187,11 @@ class _TransjatimPaymentSuccessScreenState extends State<TransjatimPaymentSucces
             onPressed: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const TransjatimTicketActiveScreen()),
-                (route) => route.isFirst,
+                MaterialPageRoute(
+                  builder: (context) => const TransjatimTicketActiveScreen(),
+                  settings: const RouteSettings(name: '/transjatim_ticket_active'),
+                ),
+                (route) => route.isFirst || route.settings.name == '/transjatim',
               );
             },
             style: ElevatedButton.styleFrom(
@@ -347,12 +350,19 @@ class _TransjatimPaymentSuccessScreenState extends State<TransjatimPaymentSucces
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
             ),
-            child: Image.network(
-              imageUrl,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            child: imageUrl.startsWith('http')
+                ? Image.network(
+                    imageUrl,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    imageUrl,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
           ),
           Padding(
             padding: const EdgeInsets.all(20),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:majadigi_superapp_frontend/providers/islamic_center_provider.dart';
 import 'dart:async';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'islamic_center_registration_success_screen.dart';
@@ -228,34 +230,9 @@ class _IslamicCenterPaymentScreenState extends State<IslamicCenterPaymentScreen>
                               ),
                               child: Column(
                                 children: [
-                                  Image.network(
-                                    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/1200px-Logo_QRIS.svg.png',
+                                  Image.asset(
+                                    'assets/images/destinasi wisata/isinya/qris.png',
                                     height: 40,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: const [
-                                          Text(
-                                            'QR',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 24,
-                                              color: Color(0xFF1E3A8A),
-                                              fontStyle: FontStyle.italic,
-                                            ),
-                                          ),
-                                          Text(
-                                            'IS',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w900,
-                                              fontSize: 24,
-                                              color: Color(0xFFEF4444),
-                                              fontStyle: FontStyle.italic,
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
                                   ),
                                   const SizedBox(height: 20),
                                   // QR Code Dynamic Rendering
@@ -372,7 +349,7 @@ class _IslamicCenterPaymentScreenState extends State<IslamicCenterPaymentScreen>
                                   ),
                                 ),
                                 child: const Text(
-                                  'Cek Status Pembayaran',
+                                  'Saya Sudah Membayar',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -479,6 +456,10 @@ class _IslamicCenterPaymentScreenState extends State<IslamicCenterPaymentScreen>
   }
 
   void _showSuccessDialog(BuildContext context) {
+    final provider = Provider.of<IslamicCenterProvider>(context, listen: false);
+    if (widget.bookingId != null) {
+      provider.updateBookingStatus(widget.bookingId!, 'lunas');
+    }
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

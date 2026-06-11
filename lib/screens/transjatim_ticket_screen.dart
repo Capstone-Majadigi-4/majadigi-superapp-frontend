@@ -4,6 +4,7 @@ import 'package:majadigi_superapp_frontend/providers/transjatim_provider.dart';
 import 'transjatim_tracking_screen.dart';
 import 'transjatim_route_screen.dart';
 import 'transjatim_payment_screen.dart';
+import 'transjatim_ticket_active_screen.dart';
 
 class TransjatimTicketScreen extends StatefulWidget {
   const TransjatimTicketScreen({super.key});
@@ -82,7 +83,14 @@ class _TransjatimTicketScreenState extends State<TransjatimTicketScreen> {
                             ),
                             const Spacer(),
                             IconButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const TransjatimTicketActiveScreen(),
+                                  ),
+                                );
+                              },
                               icon: const Icon(Icons.history, color: Colors.white),
                               style: IconButton.styleFrom(
                                 backgroundColor: Colors.white.withOpacity(0.2),
