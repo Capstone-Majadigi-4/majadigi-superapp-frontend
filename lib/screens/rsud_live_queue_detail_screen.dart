@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:majadigi_superapp_frontend/models/rsud_model.dart';
 import 'package:majadigi_superapp_frontend/services/rsud_websocket_service.dart';
 
@@ -55,7 +56,7 @@ class _RsudLiveQueueDetailScreenState extends State<RsudLiveQueueDetailScreen> w
       vsync: this,
       duration: const Duration(seconds: 2),
     );
-    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (kIsWeb || !Platform.environment.containsKey('FLUTTER_TEST')) {
       _pulseController.repeat(reverse: true);
     } else {
       _pulseController.value = 1.0;

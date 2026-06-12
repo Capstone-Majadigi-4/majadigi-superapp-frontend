@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -44,7 +45,7 @@ class _TransjatimTrackingScreenState extends State<TransjatimTrackingScreen> wit
       vsync: this,
       duration: const Duration(seconds: 2),
     );
-    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (kIsWeb || !Platform.environment.containsKey('FLUTTER_TEST')) {
       _pulseController.repeat(reverse: true);
     } else {
       _pulseController.value = 1.0;

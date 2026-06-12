@@ -450,7 +450,9 @@ class _IslamicCenterPaymentScreenState extends State<IslamicCenterPaymentScreen>
 
     // Mock verification delay
     Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pop(context); // Close loading
+      if (!mounted) return;
+      final navigator = Navigator.of(context);
+      navigator.pop(); // Close loading
       _showSuccessDialog(context);
     });
   }
@@ -462,7 +464,7 @@ class _IslamicCenterPaymentScreenState extends State<IslamicCenterPaymentScreen>
     }
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -501,9 +503,9 @@ class _IslamicCenterPaymentScreenState extends State<IslamicCenterPaymentScreen>
               height: 48,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.push(
-                    context,
+                  final navigator = Navigator.of(dialogContext);
+                  navigator.pop(); // Close dialog
+                  navigator.push(
                     MaterialPageRoute(
                       builder: (context) => IslamicCenterRegistrationSuccessScreen(
                         roomName: widget.roomName,

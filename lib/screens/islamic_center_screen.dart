@@ -109,34 +109,63 @@ class IslamicCenterScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Image Banner
                     Container(
                       width: double.infinity,
-                      height: 180,
+                      height: 280,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        image: const DecorationImage(
-                          image: NetworkImage('https://images.unsplash.com/photo-1598188306155-25e400eb5078?auto=format&fit=crop&q=80&w=800'),
-                          fit: BoxFit.cover,
-                        ),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))
-                        ]
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                              child: Image.asset(
+                                'assets/images/islamic/Islamic.png',
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'Layanan Islamic Centre',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                    fontFamily: 'Inter',
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'Pemesanan online fasilitas aula dan asrama di Islamic Centre Surabaya',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF64748B),
+                                    fontFamily: 'Inter',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
-
-                    const Text(
-                      'Layanan Islamic Center',
-                      style: TextStyle(color: Color(0xFF1E293B), fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Inter'),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Dapatkan jadwal sholat akurat untuk wilayah Jawa Timur serta informasi berbagai event keagamaan.',
-                      style: TextStyle(color: Color(0xFF64748B), fontSize: 14, fontFamily: 'Inter', height: 1.50),
-                    ),
-                    const SizedBox(height: 32),
-
                     _buildGradientButton(
                       title: 'Event & Kajian Terdekat',
                       icon: Icons.event_available_rounded,

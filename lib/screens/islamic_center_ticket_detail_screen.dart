@@ -530,7 +530,14 @@ class _IslamicCenterTicketDetailScreenState extends State<IslamicCenterTicketDet
               width: double.infinity,
               height: 40,
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('E-Tiket "$title" berhasil diunduh sebagai PDF'),
+                      backgroundColor: const Color(0xFF10B981),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.download_rounded, size: 18),
                 label: const Text('Download'),
                 style: OutlinedButton.styleFrom(

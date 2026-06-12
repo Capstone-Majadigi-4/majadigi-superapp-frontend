@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 // Screens
 import 'package:majadigi_superapp_frontend/screens/bapenda_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/profile_screen.dart';
+import 'package:majadigi_superapp_frontend/screens/transjatim_screen.dart';
 
 // Provider & Models
 import 'package:provider/provider.dart';
@@ -38,6 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _bannerTimer;
   final PageController _bannerPageController = PageController();
   int _currentBannerPage = 0;
+  bool _hasNotificationBadge = true;
+  String _selectedRegion = 'Jawa Timur';
 
   @override
   void initState() {
@@ -45,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DashboardProvider>().fetchBapokTicker();
       context.read<AuthProvider>().fetchUserProfile();
+      context.read<ModuleProvider>().reload();
     });
 
     // Auto-play timer for sliding banner
@@ -223,6 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'sapabansos': 'assets/images/sapa bansos/gambar sapa bansos.png',
       'wisata': 'assets/images/destinasi wisata/Gambar wisata bromo.png',
       'islamic_center': 'assets/images/islamic/Islamic.png',
+      'siskaperbapo': 'assets/images/bahan pokok/gambar siskaperbapo.png',
     };
     return images[moduleId];
   }
@@ -695,31 +700,35 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         // Notifikasi
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
-                              Positioned(
-                                right: 8,
-                                top: 8,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.red, width: 2),
+                        GestureDetector(
+                          onTap: () => _showNotificationBottomSheet(context),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+                                if (_hasNotificationBadge)
+                                  Positioned(
+                                    right: 8,
+                                    top: 8,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: Colors.red, width: 2),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -971,10 +980,34 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             physics: const BouncingScrollPhysics(),
             children: [
-              _buildStatCard(Icons.people_outline, 'Jumlah Penduduk', '42.089.271', const Color(0xFF3B82F6)),
-              _buildStatCard(Icons.trending_up, 'Pertumbuhan Penduduk', '0,73 %', const Color(0xFF3B82F6)),
-              _buildStatCard(Icons.account_balance_wallet_outlined, 'Penduduk Miskin', '9,56 %', const Color(0xFF3B82F6)),
-              _buildStatCard(Icons.work_outline, 'Pengangguran Terbuka', '3,59 %', const Color(0xFF3B82F6)),
+              _buildStatCard(
+                Icons.people_outline,
+                'Jumlah Penduduk',
+                '42.089.271',
+                const Color(0xFF3B82F6),
+                'Data Badan Pusat Statistik (BPS) Provinsi Jawa Timur menunjukkan total populasi mencapai 42+ juta jiwa yang tersebar di 29 Kabupaten dan 9 Kota.',
+              ),
+              _buildStatCard(
+                Icons.trending_up,
+                'Pertumbuhan Penduduk',
+                '0,73 %',
+                const Color(0xFF3B82F6),
+                'Rasio pertumbuhan penduduk tahunan Jawa Timur tercatat stabil di kisaran 0.73% per tahun dengan tingkat persebaran terpadat di wilayah perkotaan.',
+              ),
+              _buildStatCard(
+                Icons.account_balance_wallet_outlined,
+                'Penduduk Miskin',
+                '9,56 %',
+                const Color(0xFF3B82F6),
+                'Persentase tingkat kemiskinan di Jawa Timur mengalami tren penurunan berkat realisasi berbagai program bantuan sosial daerah (seperti Sapa Bansos).',
+              ),
+              _buildStatCard(
+                Icons.work_outline,
+                'Pengangguran Terbuka',
+                '3,59 %',
+                const Color(0xFF3B82F6),
+                'Tingkat Pengangguran Terbuka (TPT) berada di angka 3.59%, didorong oleh pembukaan lapangan kerja baru melalui platform ketenagakerjaan daerah (Sinaker).',
+              ),
             ],
           ),
         ),
@@ -982,39 +1015,67 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatCard(IconData icon, String title, String value, Color iconColor) {
-    return Container(
-      width: 140,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(icon, color: iconColor, size: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'Inter'),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Inter'),
-              ),
-            ],
-          ),
-        ],
+  Widget _buildStatCard(IconData icon, String title, String value, Color iconColor, String desc) {
+    return GestureDetector(
+      onTap: () => _showStatDetailDialog(context, title, value, desc),
+      child: Container(
+        width: 140,
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.01),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(icon, color: iconColor, size: 20),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'Inter'),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Inter'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  String _getSelectedRegionMap() {
+    switch (_selectedRegion) {
+      case 'Kabupaten Banyuwangi':
+        return 'assets/images/map_banyuwangi.png';
+      case 'Kabupaten Tuban':
+        return 'assets/images/map_tuban.png';
+      case 'Kota Surabaya':
+        return 'assets/images/map_surabaya.png';
+      case 'Kabupaten Lamongan':
+        return 'assets/images/map_lamongan.png';
+      case 'Kabupaten Tulungagung':
+        return 'assets/images/map_tulungagung.png';
+      case 'Jawa Timur':
+      default:
+        return 'assets/images/map_jatim.png';
+    }
   }
 
   // 2. Layanan Daerah
@@ -1028,28 +1089,119 @@ class _HomeScreenState extends State<HomeScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildRegionChip('Jawa Timur', true),
-              _buildRegionChip('Kabupaten Banyuwangi', false),
-              _buildRegionChip('Kabupaten Tuban', false),
-              _buildRegionChip('Kota Surabaya', false),
-              _buildRegionChip('Kabupaten Lamongan', false),
-              _buildRegionChip('Kabupaten Tulungagung', false),
+              _buildRegionChip('Jawa Timur', _selectedRegion == 'Jawa Timur'),
+              _buildRegionChip('Kabupaten Banyuwangi', _selectedRegion == 'Kabupaten Banyuwangi'),
+              _buildRegionChip('Kabupaten Tuban', _selectedRegion == 'Kabupaten Tuban'),
+              _buildRegionChip('Kota Surabaya', _selectedRegion == 'Kota Surabaya'),
+              _buildRegionChip('Kabupaten Lamongan', _selectedRegion == 'Kabupaten Lamongan'),
+              _buildRegionChip('Kabupaten Tulungagung', _selectedRegion == 'Kabupaten Tulungagung'),
             ],
           ),
         ),
         const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Center(
-              // Placeholder untuk gambar peta Jatim
-              child: Icon(Icons.map, size: 100, color: Colors.green.shade400),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TransjatimScreen()),
+              );
+            },
+            child: Container(
+              height: 160,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    Image.asset(
+                      _getSelectedRegionMap(),
+                      width: double.infinity,
+                      height: 160,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.green.shade50,
+                        child: Center(
+                          child: Icon(Icons.map_outlined, size: 50, color: Colors.green.shade400),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.black.withValues(alpha: 0.4), Colors.transparent],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _selectedRegion == 'Jawa Timur'
+                                ? 'Peta Koridor TransJatim'
+                                : 'Peta Koridor ${_selectedRegion.replaceAll("Kabupaten ", "").replaceAll("Kota ", "")}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Inter',
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Ketuk untuk melacak bus & rute halte',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 11,
+                              fontFamily: 'Inter',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE11D48),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFE11D48).withValues(alpha: 0.3),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.navigation_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -1058,19 +1210,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRegionChip(String label, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFE11D48) : Colors.white,
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: isSelected ? const Color(0xFFE11D48) : Colors.grey.shade300),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : const Color(0xFF64748B),
-          fontSize: 12,
-          fontFamily: 'Inter',
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedRegion = label;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFE11D48) : Colors.white,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: isSelected ? const Color(0xFFE11D48) : Colors.grey.shade300),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+            fontSize: 12,
+            fontFamily: 'Inter',
+          ),
         ),
       ),
     );
@@ -1094,11 +1253,29 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Column(
               children: [
-                _buildAgendaItem('Kamis, 01 Januari', '00:30 - 12:00', 'BAHANA BERSAHAJA', 'Kabupaten Madiun'),
+                _buildAgendaItem(
+                  'Kamis, 01 Januari',
+                  '00:30 - 12:00',
+                  'BAHANA BERSAHAJA',
+                  'Kabupaten Madiun',
+                  'Gelar budaya tahunan Kabupaten Madiun yang menampilkan parade tari tradisional, pameran UMKM lokal unggulan, dan pertunjukan wayang kulit semalam suntuk di Alun-Alun Reksogati.',
+                ),
                 const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                _buildAgendaItem('Rabu, 01 April 202...', '00:30 - 12:00', 'Upacara Adat Labuh Laut Pantai Sine', 'Kabupaten Tulungagung'),
+                _buildAgendaItem(
+                  'Rabu, 01 April 2026',
+                  '00:30 - 12:00',
+                  'Upacara Adat Labuh Laut Pantai Sine',
+                  'Kabupaten Tulungagung',
+                  'Upacara adat tahunan melarung sesaji ke laut sebagai bentuk rasa syukur nelayan Pantai Sine atas limpahan hasil laut dan memohon keselamatan dalam melaut.',
+                ),
                 const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                _buildAgendaItem('Rabu, 01 April 202...', '00:30 - 12:00', 'Gelar Kesenian dan Pameran Produk Ek...', 'Kabupaten Tulungagung'),
+                _buildAgendaItem(
+                  'Rabu, 01 April 2026',
+                  '00:30 - 12:00',
+                  'Gelar Kesenian dan Pameran Produk Ek...',
+                  'Kabupaten Tulungagung',
+                  'Eksibisi seni pertunjukan khas Tulungagung (Reog Kendang) dipadukan dengan bazar produk kerajinan batu marmer ekspor unggulan daerah di GOR Jayabaya.',
+                ),
               ],
             ),
           ),
@@ -1107,53 +1284,101 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAgendaItem(String date, String time, String title, String location) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
+  Widget _buildAgendaItem(String date, String time, String title, String location, String detail) {
+    return InkWell(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Inter')),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     const Icon(Icons.calendar_today, size: 12, color: Color(0xFF10B981)),
-                    const SizedBox(width: 4),
-                    Text(date, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'Inter')),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.access_time, size: 12, color: Color(0xFF10B981)),
-                    const SizedBox(width: 4),
-                    Text(time, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'Inter')),
+                    const SizedBox(width: 6),
+                    Text(date, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontFamily: 'Inter')),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B), fontFamily: 'Inter'),
-                ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
-                    const SizedBox(width: 4),
-                    Text(location, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontFamily: 'Inter')),
+                    const Icon(Icons.access_time, size: 12, color: Color(0xFF10B981)),
+                    const SizedBox(width: 6),
+                    Text(time, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontFamily: 'Inter')),
                   ],
                 ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFFE11D48)),
+                    const SizedBox(width: 6),
+                    Text(location, style: const TextStyle(fontSize: 11, color: Color(0xFFE11D48), fontFamily: 'Inter')),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(detail, style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.5, fontFamily: 'Inter')),
               ],
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup', style: TextStyle(color: Color(0xFF3B82F6), fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(8),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 12, color: Color(0xFF10B981)),
+                      const SizedBox(width: 4),
+                      Text(date, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'Inter')),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.access_time, size: 12, color: Color(0xFF10B981)),
+                      const SizedBox(width: 4),
+                      Text(time, style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'Inter')),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B), fontFamily: 'Inter'),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
+                      const SizedBox(width: 4),
+                      Text(location, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontFamily: 'Inter')),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            child: const Icon(Icons.account_balance, color: Color(0xFF94A3B8)),
-          )
-        ],
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.account_balance, color: Color(0xFF94A3B8)),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -1170,9 +1395,24 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             physics: const BouncingScrollPhysics(),
             children: [
-              _buildBeritaCard('assets/images/header.png', 'Sabtu, 04 Apr 2026', 'PJT Perketat Pengamanan Bendungan...'), 
-              _buildBeritaCard('assets/images/header.png', 'Sabtu, 04 Apr 2026', 'PJT Perketat Pengamanan Bendungan...'),
-              _buildBeritaCard('assets/images/header.png', 'Sabtu, 04 Apr 2026', 'PJT Perketat Pengamanan Bendungan...'),
+              _buildBeritaCard(
+                'assets/images/header.png',
+                'Sabtu, 04 Apr 2026',
+                'PJT Perketat Pengamanan Bendungan Karangkates',
+                'Perum Jasa Tirta (PJT) I memperketat pengamanan di sekitar Bendungan Karangkates, Malang. Langkah ini diambil untuk memastikan keamanan infrastruktur strategis nasional dari potensi gangguan, serta memonitor debit air pasca tingginya curah hujan di wilayah hulu Sungai Brantas dalam beberapa pekan terakhir.',
+              ), 
+              _buildBeritaCard(
+                'assets/images/header.png',
+                'Jumat, 03 Apr 2026',
+                'TransJatim Tambah Armada Bus Koridor Baru',
+                'Pemerintah Pemprov Jawa Timur berencana meluncurkan tambahan 10 armada bus baru untuk koridor penghubung Surabaya-Gresik guna mengurangi waktu tunggu penumpang di halte utama. Penambahan armada ini juga dibarengi dengan integrasi GPS real-time yang lebih presisi ke aplikasi Majadigi.',
+              ),
+              _buildBeritaCard(
+                'assets/images/header.png',
+                'Kamis, 02 Apr 2026',
+                'Bapenda Jatim Gelar Pemutihan Pajak PBB',
+                'Badan Pendapatan Daerah (Bapenda) kembali menyelenggarakan program pemutihan denda pajak kendaraan bermotor (PKB) dan pajak bumi bangunan (PBB). Wajib pajak dihimbau untuk memanfaatkan momen ini melalui pembayaran online terintegrasi via e-samsat di aplikasi Majadigi.',
+              ),
             ],
           ),
         ),
@@ -1180,56 +1420,119 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBeritaCard(String imgPath, String date, String title) {
-    return Container(
-      width: 200,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.asset(
-              imgPath,
-              height: 100,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stack) => Container(
-                height: 100, 
-                color: Colors.grey.shade100, 
-                alignment: Alignment.center,
-                child: const Icon(Icons.image, color: Colors.grey)
-              ),
+  Widget _buildBeritaCard(String imgPath, String date, String title, String summary) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Inter'),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    imgPath,
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => Container(
+                      height: 120,
+                      color: Colors.grey.shade100,
+                      child: const Icon(Icons.image, color: Colors.grey),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     const Icon(Icons.calendar_today, size: 10, color: Color(0xFF10B981)),
                     const SizedBox(width: 4),
-                    Text(date, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontFamily: 'Inter')),
+                    Text(
+                      date,
+                      style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontFamily: 'Inter'),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 12),
                 Text(
-                  title,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Inter'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  summary,
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.5, fontFamily: 'Inter'),
                 ),
               ],
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tutup', style: TextStyle(color: Color(0xFF3B82F6), fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
-        ],
+        );
+      },
+      child: Container(
+        width: 200,
+        margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.asset(
+                imgPath,
+                height: 100,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stack) => Container(
+                  height: 100, 
+                  color: Colors.grey.shade100, 
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.image, color: Colors.grey),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 10, color: Color(0xFF10B981)),
+                      const SizedBox(width: 4),
+                      Text(date, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontFamily: 'Inter')),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Inter'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1240,15 +1543,15 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _buildSectionHeader('Perkiraan Cuaca\nJawa Timur', Icons.cloud_outlined, showSeeAll: true),
         SizedBox(
-          height: 120,
+          height: 125,
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 24),
             physics: const BouncingScrollPhysics(),
             children: [
-              _buildCuacaCard('Kota Surabaya'),
-              _buildCuacaCard('Kota Malang'),
-              _buildCuacaCard('Kota Batu'),
+              _buildCuacaCard('Kota Surabaya', '32°C', 'Cerah'),
+              _buildCuacaCard('Kota Malang', '26°C', 'Berawan'),
+              _buildCuacaCard('Kota Batu', '22°C', 'Hujan'),
             ],
           ),
         ),
@@ -1256,27 +1559,60 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCuacaCard(String city) {
-    return Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            city, 
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Inter'), 
-            textAlign: TextAlign.center
-          ),
-          const Spacer(),
-          const Icon(Icons.cloud, size: 40, color: Color(0xFF7DD3FC)), 
-        ],
+  Widget _buildCuacaCard(String city, String temp, String condition) {
+    IconData weatherIcon = Icons.cloud;
+    Color iconColor = const Color(0xFF7DD3FC);
+    
+    if (condition == 'Cerah') {
+      weatherIcon = Icons.wb_sunny_rounded;
+      iconColor = const Color(0xFFF59E0B);
+    } else if (condition == 'Hujan') {
+      weatherIcon = Icons.umbrella_rounded;
+      iconColor = const Color(0xFF3B82F6);
+    }
+
+    return GestureDetector(
+      onTap: () => _showWeatherDetailBottomSheet(context, city, temp, condition),
+      child: Container(
+        width: 120,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              city, 
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Inter'), 
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Icon(weatherIcon, size: 28, color: iconColor), 
+            const SizedBox(height: 6),
+            Text(
+              temp,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Inter'),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              condition,
+              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'Inter'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2186,6 +2522,419 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  void _showNotificationBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Notifikasi',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                        if (_hasNotificationBadge)
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _hasNotificationBadge = false;
+                              });
+                              setSheetState(() {});
+                            },
+                            icon: const Icon(Icons.done_all, size: 16, color: Color(0xFF0065FF)),
+                            label: const Text(
+                              'Tandai Semua Dibaca',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0065FF),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      children: [
+                        _buildNotificationCard(
+                          title: 'Jatuh Tempo Pajak',
+                          message: 'Pajak PBB Anda (NOP: 3573...) akan jatuh tempo dalam 3 hari. Segera lakukan pembayaran.',
+                          time: '3 menit yang lalu',
+                          icon: Icons.warning_rounded,
+                          iconColor: const Color(0xFFEF4444),
+                          bgColor: const Color(0xFFFEF2F2),
+                          borderColor: const Color(0xFFFECACA),
+                          isUnread: _hasNotificationBadge,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildNotificationCard(
+                          title: 'Antrean RSUD Dr Saiful Anwar',
+                          message: 'Poli Anak - Nomor Antrean A-001. Silakan bersiap menuju ruang periksa.',
+                          time: '1 jam yang lalu',
+                          icon: Icons.notifications_active,
+                          iconColor: const Color(0xFF0065FF),
+                          bgColor: const Color(0xFFEFF6FF),
+                          borderColor: const Color(0xFFBFDBFE),
+                          isUnread: _hasNotificationBadge,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildNotificationCard(
+                          title: 'Pendaftaran Kajian Berhasil',
+                          message: 'Pendaftaran Kajian Akbar Ramadhan bersama Ustadz Dr. Ahmad Zainuddin telah dikonfirmasi.',
+                          time: '2 jam yang lalu',
+                          icon: Icons.event_available,
+                          iconColor: const Color(0xFF8B5CF6),
+                          bgColor: const Color(0xFFF5F3FF),
+                          borderColor: const Color(0xFFDDD6FE),
+                          isUnread: _hasNotificationBadge,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildNotificationCard(
+                          title: 'E-Ticket Transjatim Aktif',
+                          message: 'Pembelian tiket berhasil. Tiket Koridor I Anda siap digunakan.',
+                          time: '1 hari yang lalu',
+                          icon: Icons.directions_bus,
+                          iconColor: const Color(0xFF10B981),
+                          bgColor: const Color(0xFFECFDF5),
+                          borderColor: const Color(0xFFA7F3D0),
+                          isUnread: false,
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationCard({
+    required String title,
+    required String message,
+    required String time,
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required Color borderColor,
+    required bool isUnread,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isUnread ? borderColor : const Color(0xFFE2E8F0), width: isUnread ? 1.5 : 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: bgColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: isUnread ? const Color(0xFF0F172A) : const Color(0xFF475569),
+                      ),
+                    ),
+                    if (isUnread)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF0065FF),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: isUnread ? const Color(0xFF334155) : const Color(0xFF64748B),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  time,
+                  style: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showWeatherDetailBottomSheet(BuildContext context, String city, String temp, String condition) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      city,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Prakiraan Cuaca Hari Ini',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade500,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: condition == 'Cerah'
+                        ? const Color(0xFFFFF7ED)
+                        : condition == 'Hujan'
+                            ? const Color(0xFFEFF6FF)
+                            : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    condition,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: condition == 'Cerah'
+                          ? const Color(0xFFC2410C)
+                          : condition == 'Hujan'
+                              ? const Color(0xFF1D4ED8)
+                              : const Color(0xFF475569),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildWeatherStatItem(Icons.thermostat, 'Suhu', temp),
+                _buildWeatherStatItem(Icons.water_drop_outlined, 'Kelembaban', '65%'),
+                _buildWeatherStatItem(Icons.air, 'Kecepatan Angin', '12 km/h'),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Divider(color: Color(0xFFF1F5F9), thickness: 1),
+            const SizedBox(height: 16),
+            const Text(
+              'Prakiraan 3 Hari Ke Depan',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Color(0xFF1E293B),
+                fontFamily: 'Inter',
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildWeatherForecastRow('Besok', '27°C - 33°C', Icons.wb_sunny_rounded, const Color(0xFFF59E0B)),
+            const SizedBox(height: 8),
+            _buildWeatherForecastRow('Minggu', '25°C - 31°C', Icons.cloud, const Color(0xFF7DD3FC)),
+            const SizedBox(height: 8),
+            _buildWeatherForecastRow('Senin', '24°C - 30°C', Icons.umbrella_rounded, const Color(0xFF3B82F6)),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeatherStatItem(IconData icon, String label, String value) {
+    return Column(
+      children: [
+        Icon(icon, color: const Color(0xFF0065FF), size: 24),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontFamily: 'Inter'),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B), fontFamily: 'Inter'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeatherForecastRow(String day, String range, IconData icon, Color iconColor) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          day,
+          style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B), fontFamily: 'Inter'),
+        ),
+        Row(
+          children: [
+            Icon(icon, size: 20, color: iconColor),
+            const SizedBox(width: 12),
+            Text(
+              range,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF475569), fontFamily: 'Inter'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showStatDetailDialog(BuildContext context, String title, String value, String desc) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Color(0xFF1E293B),
+            fontFamily: 'Inter',
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFE11D48),
+                fontFamily: 'Inter',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              desc,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+                height: 1.5,
+                fontFamily: 'Inter',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup', style: TextStyle(color: Color(0xFF3B82F6), fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

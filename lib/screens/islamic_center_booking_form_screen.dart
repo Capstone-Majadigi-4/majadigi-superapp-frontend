@@ -397,9 +397,9 @@ class _IslamicCenterBookingFormScreenState extends State<IslamicCenterBookingFor
             CustomButton(
               text: 'Lanjutkan Pembayaran',
               onPressed: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
+                final navigator = Navigator.of(context);
+                navigator.pop();
+                navigator.push(
                   MaterialPageRoute(
                     builder: (context) => IslamicCenterPaymentScreen(
                       roomName: widget.fasilitas.nama,

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
+import 'package:majadigi_superapp_frontend/providers/rsud_provider.dart';
 import 'rsud_ambil_antrean_screen.dart';
 import 'rsud_ruang_inap_screen.dart';
+import 'rsud_queue_status_screen.dart';
 
 class RsudSaifulAnwarScreen extends StatelessWidget {
   const RsudSaifulAnwarScreen({super.key});
@@ -128,7 +130,7 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
                             child: ClipRRect(
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                               child: Image.asset(
-                                'assets/images/sapabansos_banner.png',
+                                'assets/images/RSUD saiful/gambar RSUD saiful anwar.png',
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                               ),
@@ -163,14 +165,37 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _buildGradientButton(
-                      title: 'Ambil Antrean',
-                      icon: Icons.badge_outlined,
-                      iconColor: const Color(0xFFEAB308),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const RsudAmbilAntreanScreen()),
+                    Consumer<RsudProvider>(
+                      builder: (context, provider, child) {
+                        final hasActive = provider.lastAntrean != null;
+                        return Column(
+                          children: [
+                            if (hasActive) ...[
+                              _buildGradientButton(
+                                title: 'Status Antrean Aktif',
+                                icon: Icons.qr_code_scanner_rounded,
+                                iconColor: const Color(0xFF10B981),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const RsudQueueStatusScreen()),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                            _buildGradientButton(
+                              title: hasActive ? 'Ambil Antrean Baru' : 'Ambil Antrean',
+                              icon: Icons.badge_outlined,
+                              iconColor: const Color(0xFFEAB308),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const RsudAmbilAntreanScreen()),
+                                );
+                              },
+                            ),
+                          ],
                         );
                       },
                     ),

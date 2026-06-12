@@ -45,6 +45,9 @@ class MockModuleProvider extends ChangeNotifier implements ModuleProvider {
 
   @override
   bool isFavorite(String id) => _favorites.contains(id);
+
+  @override
+  Future<void> reload() async {}
 }
 
 class MockHttpOverrides extends HttpOverrides {

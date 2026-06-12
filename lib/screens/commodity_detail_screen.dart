@@ -369,6 +369,8 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
               painter: DualLinePainter(
                 marketRatios: marketRatios,
                 coopRatios: coopRatios,
+                marketPrices: marketPrices,
+                coopPrices: coopPrices,
               ),
             ),
           ),
@@ -612,10 +614,14 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
 class DualLinePainter extends CustomPainter {
   final List<double> marketRatios;
   final List<double> coopRatios;
+  final List<double> marketPrices;
+  final List<double> coopPrices;
 
   DualLinePainter({
     required this.marketRatios,
     required this.coopRatios,
+    required this.marketPrices,
+    required this.coopPrices,
   });
 
   @override
@@ -637,6 +643,8 @@ class DualLinePainter extends CustomPainter {
         size,
         const Color(0xFF22C55E),
         marketRatios,
+        marketPrices,
+        true,
       );
     }
 
@@ -647,11 +655,20 @@ class DualLinePainter extends CustomPainter {
         size,
         const Color(0xFF155DFC),
         coopRatios,
+        coopPrices,
+        false,
       );
     }
   }
 
-  void _drawLine(Canvas canvas, Size size, Color color, List<double> values) {
+  void _drawLine(
+    Canvas canvas,
+    Size size,
+    Color color,
+    List<double> values,
+    List<double> rawPrices,
+    bool isMarket,
+  ) {
     final paint = Paint()
       ..color = color
       ..strokeWidth = 3
@@ -703,7 +720,8 @@ class DualLinePainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, paint);
 
-    for (final point in points) {
+    for (int i = 0; i < points.length; i++) {
+      final point = points[i];
       canvas.drawCircle(point, 4, dotPaint);
       canvas.drawCircle(
         point,
@@ -712,11 +730,50 @@ class DualLinePainter extends CustomPainter {
           ..color = color.withOpacity(0.2)
           ..style = PaintingStyle.fill,
       );
+
+      // Draw the price label
+      if (i < rawPrices.length) {
+        final priceText = _formatLabelPrice(rawPrices[i]);
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: priceText,
+            style: TextStyle(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Inter',
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+
+        double xOffset = point.dx - (textPainter.width / 2);
+        // Constrain the text label to stay within canvas horizontal bounds
+        if (xOffset < 2) {
+          xOffset = 2;
+        } else if (xOffset + textPainter.width > size.width - 2) {
+          xOffset = size.width - textPainter.width - 2;
+        }
+
+        final double yOffset = isMarket
+            ? point.dy - textPainter.height - 8
+            : point.dy + 8;
+
+        textPainter.paint(canvas, Offset(xOffset, yOffset));
+      }
     }
+  }
+
+  String _formatLabelPrice(double price) {
+    return 'Rp ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
   @override
   bool shouldRepaint(covariant DualLinePainter oldDelegate) {
-    return oldDelegate.marketRatios != marketRatios || oldDelegate.coopRatios != coopRatios;
+    return oldDelegate.marketRatios != marketRatios ||
+        oldDelegate.coopRatios != coopRatios ||
+        oldDelegate.marketPrices != marketPrices ||
+        oldDelegate.coopPrices != coopPrices;
   }
 }

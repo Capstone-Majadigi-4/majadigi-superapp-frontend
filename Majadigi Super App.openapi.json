@@ -78,7 +78,7 @@
               "example": {
                 "nik": "3578010101900002",
                 "password": "password123",
-                "nama": "Budi Sintara",
+                "nama": "Pramudhia Indonesia",
                 "no_hp": "08123456789",
                 "fcm_token": "device-token-fcm-xxx"
               }
@@ -1802,7 +1802,11 @@
             "headers": {}
           }
         },
-        "security": []
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/bapok/alert": {
@@ -1853,7 +1857,11 @@
             "headers": {}
           }
         },
-        "security": []
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/bapok/alert/{id}": {
@@ -1904,7 +1912,7 @@
         "security": []
       }
     },
-    "/admin/komoditas": {
+    "/bapok/admin/komoditas": {
       "post": {
         "summary": "Tambah komoditas baru",
         "deprecated": false,
@@ -1983,7 +1991,7 @@
         ]
       }
     },
-    "/admin/komoditas/{id}": {
+    "/bapok/admin/komoditas/{id}": {
       "patch": {
         "summary": "Update komoditas",
         "deprecated": false,
@@ -2009,6 +2017,13 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateKomoditasRequest"
+              },
+              "example": {
+                "nama": "commodo eu qui dolore",
+                "kategori": "culpa",
+                "satuan": "commodo",
+                "ikon_url": "https://valuable-cantaloupe.ac.id/",
+                "is_active": false
               }
             }
           },
@@ -2068,7 +2083,7 @@
             "in": "path",
             "description": "",
             "required": true,
-            "example": "",
+            "example": "d5c06875-e990-4b5a-9342-a02db1c3c8b6",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -2117,7 +2132,7 @@
         ]
       }
     },
-    "/admin/harga": {
+    "/bapok/admin/harga": {
       "post": {
         "summary": "Input / update harga pasar (single entry)",
         "deprecated": false,
@@ -2268,7 +2283,7 @@
         ]
       }
     },
-    "/admin/harga-koperasi": {
+    "/bapok/admin/harga-koperasi": {
       "post": {
         "summary": "Input / update harga koperasi (single entry)",
         "deprecated": false,
@@ -2989,6 +3004,78 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": {
+                "judul": "tes",
+                "konten": "tes",
+                "aktif_dari": "2026-06-11",
+                "aktif_sampai": "2026-06-12"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bansos/admin/pengumuman/{id}": {
+      "patch": {
+        "summary": "update pengumuman",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "8448d3c0-d064-4696-97b9-422f5533a05a",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "admin",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": ""
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -3007,39 +3094,6 @@
       }
     },
     "/bansos/admin/pengumuman/dd752975-c31e-41f7-b606-8234fc80f1fb": {
-      "patch": {
-        "summary": "update pengumuman",
-        "deprecated": false,
-        "description": "",
-        "tags": [],
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "",
-            "required": false,
-            "example": "admin",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            },
-            "headers": {}
-          }
-        },
-        "security": []
-      },
       "delete": {
         "summary": "delete pengumuman",
         "deprecated": false,
@@ -3127,6 +3181,17 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "example": "{\n    \"judul\" : \"hai\",\n    \"deskripsi\" : \"hai\",\n    \"kualifikasi\" : \"hai\",\n    \"kota\" : \"hai\",\n    \"tipe_kerja\" : \"hai\",\n    \"gaji_min\" : \"1000\",\n    \"gaji_max\" : \"10000\",\n    \"deadline\" : \"2026-10-11\",\n    \"perusahaan_id\" : \"\",\n}"
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -3144,13 +3209,22 @@
         "security": []
       }
     },
-    "/sinaker/admin/lowongan/5caa782b-949c-4392-91eb-6db970b8ab4c": {
+    "/sinaker/admin/lowongan/{id}": {
       "patch": {
         "summary": "change status",
         "deprecated": false,
         "description": "",
         "tags": [],
         "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "x-user-role",
             "in": "header",
@@ -3270,13 +3344,23 @@
         ]
       }
     },
-    "/sinaker/lowongan/5caa782b-949c-4392-91eb-6db970b8ab4c/lamar": {
+    "/sinaker/lowongan/{id}/lamar": {
       "post": {
         "summary": "apply",
         "deprecated": false,
         "description": "",
         "tags": [],
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3620,6 +3704,201 @@
             "bearerAuth": []
           }
         ]
+      }
+    },
+    "/bapenda/kendaraan/jenis": {
+      "get": {
+        "summary": "jenis kendaraan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapenda/kendaraan/merk": {
+      "get": {
+        "summary": "jenis kendaraan",
+        "deprecated": false,
+        "description": "jenis (wajib): `Mobil` atau `Motor`",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "jenis",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "Mobil",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapenda/kendaraan/model": {
+      "get": {
+        "summary": "merk kendaraan",
+        "deprecated": false,
+        "description": "merk (wajib): Nama merk kendaraan",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "merk",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "Toyota`",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapenda/kendaraan/tipe": {
+      "get": {
+        "summary": "tipe kendaraan",
+        "deprecated": false,
+        "description": "model (wajib): Nama model kendaraan",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "model",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "Fortuner",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapenda/kendaraan/tahun": {
+      "get": {
+        "summary": "tahun kendaraan",
+        "deprecated": false,
+        "description": "tipe (wajib): Nama tipe kendaraan",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "tipe",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "VRZ",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/bapenda/kendaraan/njkb": {
+      "post": {
+        "summary": "cek harga",
+        "deprecated": false,
+        "description": "{\n  \"jenis_kendaraan\": \"Mobil\",\n  \"merk\": \"Toyota\",\n  \"model\": \"Fortuner\",\n  \"tipe\": \"VRZ\",\n  \"tahun\": 2023\n}\n\n",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": []
       }
     },
     "/wisata/admin/scan": {

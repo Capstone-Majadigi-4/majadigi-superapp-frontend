@@ -266,10 +266,14 @@ class _RsudAmbilAntreanScreenState extends State<RsudAmbilAntreanScreen> {
                           }
 
                           if (antrean != null) {
-                            await NotificationService().showQueueNotification(
-                              queueNumber: antrean.nomorAntrean,
-                              polyclinic: antrean.poli,
-                            );
+                            try {
+                              await NotificationService().showQueueNotification(
+                                queueNumber: antrean.nomorAntrean,
+                                polyclinic: antrean.poli,
+                              );
+                            } catch (e) {
+                              debugPrint('Error triggering queue notification: $e');
+                            }
                             
                             if (context.mounted) {
                               Navigator.pushReplacement(

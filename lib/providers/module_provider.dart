@@ -218,6 +218,10 @@ class ModuleProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> reload() async {
+    await _initPrefs();
+  }
+
   Future<void> setInitialModulesFromOnboarding(List<String> moduleIds) async {
     final List<String> uniqueIds = ['emergency'];
     for (var id in moduleIds) {

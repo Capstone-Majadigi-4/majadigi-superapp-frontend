@@ -142,30 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
   
-            // Back Button
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                  onPressed: () {
-                    if (_currentStep > 0) {
-                      setState(() => _currentStep = 0);
-                    } else {
-                      if (Navigator.canPop(context)) {
-                        Navigator.pop(context);
-                      } else {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const LoginScreen()),
-                        );
-                      }
-                    }
-                  },
-                ),
-              ),
-            ),
-  
+
             // Main Content
             SafeArea(
               child: SingleChildScrollView(
@@ -334,6 +311,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+            // Back Button
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                  onPressed: () {
+                    if (_currentStep > 0) {
+                      setState(() => _currentStep = 0);
+                    } else {
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        );
+                      }
+                    }
+                  },
                 ),
               ),
             ),

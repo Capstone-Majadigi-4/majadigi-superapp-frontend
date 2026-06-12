@@ -202,8 +202,7 @@ class PaymentQrDialog extends StatelessWidget {
                       if (onConfirm != null) {
                         onConfirm!();
                       }
-                      Navigator.pop(context); // Close QR dialog
-                      showPaymentSuccessDialog(context, amount: amount, nextScreen: nextScreen);
+                      Navigator.pop(context, true); // Close QR dialog and return true
                     },
                   ),
                   const SizedBox(height: 12),
@@ -238,14 +237,18 @@ void showPaymentQrDialog(
   VoidCallback? onConfirm,
   Widget? nextScreen,
 }) {
-  showDialog(
+  showDialog<bool>(
     context: context,
     barrierDismissible: true,
-    builder: (context) => PaymentQrDialog(
+    builder: (dialogContext) => PaymentQrDialog(
       amount: amount,
       agencyName: agencyName,
       onConfirm: onConfirm,
       nextScreen: nextScreen,
     ),
-  );
+  ).then((success) {
+    if (success == true && context.mounted) {
+      showPaymentSuccessDialog(context, amount: amount, nextScreen: nextScreen);
+    }
+  });
 }

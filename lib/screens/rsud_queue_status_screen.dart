@@ -7,6 +7,7 @@ import 'package:majadigi_superapp_frontend/providers/rsud_provider.dart';
 import 'package:majadigi_superapp_frontend/models/rsud_model.dart';
 import 'package:majadigi_superapp_frontend/screens/rsud_ambil_antrean_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/rsud_live_queue_detail_screen.dart';
+import 'package:majadigi_superapp_frontend/services/rsud_websocket_service.dart';
 
 class RsudQueueStatusScreen extends StatefulWidget {
   const RsudQueueStatusScreen({super.key});
@@ -22,11 +23,12 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
   int estimationMinutes = 0;
   bool _trackerInitialized = false;
   
-  // Placeholder for WebSocket/SSE connection
+  final RsudWebSocketService _wsService = RsudWebSocketService();
   StreamSubscription? _queueSubscription;
   Timer? _simulativeTimer;
 
   String? _lastNomorAntrean;
+  List<Poliklinik>? _lastPoliklinikList;
 
   @override
   void initState() {
@@ -42,10 +44,19 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Listen reactively to RsudProvider updates
-    final antrean = Provider.of<RsudProvider>(context).lastAntrean;
-    if (antrean?.nomorAntrean != _lastNomorAntrean) {
+    final provider = Provider.of<RsudProvider>(context);
+    final antrean = provider.lastAntrean;
+    final polis = provider.poliklinikList;
+
+    bool poliListChanged = false;
+    if (_lastPoliklinikList == null || _lastPoliklinikList!.length != polis.length) {
+      poliListChanged = true;
+      _lastPoliklinikList = List.from(polis);
+    }
+
+    if (antrean?.nomorAntrean != _lastNomorAntrean || (poliListChanged && polis.isNotEmpty)) {
       _lastNomorAntrean = antrean?.nomorAntrean;
-      debugPrint('RSUD STATUS SCREEN: lastAntrean changed to: ${antrean?.nomorAntrean}, poli: ${antrean?.poli}');
+      debugPrint('RSUD STATUS SCREEN: didChangeDependencies triggered. lastAntrean: ${antrean?.nomorAntrean}, poli: ${antrean?.poli}');
       _initLiveTracker(antrean?.nomorAntrean);
     }
   }
@@ -54,6 +65,7 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
   void dispose() {
     _queueSubscription?.cancel();
     _simulativeTimer?.cancel();
+    _wsService.disconnect();
     super.dispose();
   }
 
@@ -98,11 +110,11 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
     }
   }
 
-  void _initLiveTracker(String? nomorAntrean) {
+  void _startSimulativeTimer(String? nomorAntrean) {
     _simulativeTimer?.cancel();
     
     final myNumber = _parseQueueNumber(nomorAntrean);
-    debugPrint('RSUD STATUS SCREEN: _initLiveTracker called with $nomorAntrean, parsed number: $myNumber');
+    debugPrint('RSUD STATUS SCREEN: _startSimulativeTimer called with $nomorAntrean, parsed number: $myNumber');
     
     if (myNumber != null && myNumber > 1) {
       // Estimate: serving is ~5 people before the user, min 1
@@ -149,6 +161,56 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
         }
       });
     });
+  }
+
+  void _initLiveTracker(String? nomorAntrean) {
+    _simulativeTimer?.cancel();
+    _queueSubscription?.cancel();
+    _wsService.disconnect();
+
+    if (nomorAntrean == null || nomorAntrean.isEmpty) {
+      setState(() {
+        currentServing = '-';
+        waitingCount = 0;
+        estimationMinutes = 0;
+      });
+      return;
+    }
+
+    final provider = Provider.of<RsudProvider>(context, listen: false);
+    final antrean = provider.lastAntrean;
+    final activePoli = antrean?.poli ?? '';
+
+    String? matchedPoliId;
+    if (activePoli.isNotEmpty) {
+      for (var poli in provider.poliklinikList) {
+        if (_isClinicMatch(poli.nama, activePoli)) {
+          matchedPoliId = poli.id;
+          break;
+        }
+      }
+    }
+
+    if (matchedPoliId != null) {
+      debugPrint('RSUD STATUS SCREEN: Matched poli "$activePoli" to ID "$matchedPoliId". Connecting to live WS...');
+      _wsService.connect(matchedPoliId);
+
+      _queueSubscription = _wsService.queueStream.listen((data) {
+        if (mounted) {
+          final wsServing = data['currentServing']?.toString() ?? '-';
+          final wsWaiting = data['waitingCount'] is int ? data['waitingCount'] as int : 0;
+
+          setState(() {
+            currentServing = wsServing;
+            waitingCount = wsWaiting;
+            estimationMinutes = wsWaiting * 3;
+          });
+        }
+      });
+    } else {
+      debugPrint('RSUD STATUS SCREEN: No matching poli found yet (poliklinikList size: ${provider.poliklinikList.length}). Using fallback simulation.');
+      _startSimulativeTimer(nomorAntrean);
+    }
   }
 
   @override

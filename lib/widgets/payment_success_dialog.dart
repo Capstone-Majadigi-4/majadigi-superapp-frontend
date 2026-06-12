@@ -150,9 +150,9 @@ class PaymentSuccessDialog extends StatelessWidget {
                 text: 'Selesai',
                 backgroundColor: const Color(0xFF00A63E),
                 onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.push(
-                    context,
+                  final navigator = Navigator.of(context);
+                  navigator.pop(); // Close dialog
+                  navigator.push(
                     MaterialPageRoute(
                       builder: (context) => nextScreen ?? PaymentCompletedScreen(
                         amount: amount,

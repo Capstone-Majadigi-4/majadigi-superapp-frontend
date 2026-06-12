@@ -201,3 +201,47 @@ class BapendaEtbpkb {
     };
   }
 }
+
+class BapendaNjkbResult {
+  final String jenisKendaraan;
+  final String merk;
+  final String model;
+  final String tipe;
+  final int tahun;
+  final double njkb;
+  final double pkbRataRata;
+
+  BapendaNjkbResult({
+    required this.jenisKendaraan,
+    required this.merk,
+    required this.model,
+    required this.tipe,
+    required this.tahun,
+    required this.njkb,
+    required this.pkbRataRata,
+  });
+
+  factory BapendaNjkbResult.fromJson(Map<String, dynamic> json) {
+    return BapendaNjkbResult(
+      jenisKendaraan: json['jenis_kendaraan'] ?? json['jenisKendaraan'] ?? '',
+      merk: json['merk'] ?? '',
+      model: json['model'] ?? '',
+      tipe: json['tipe'] ?? '',
+      tahun: json['tahun'] is int ? json['tahun'] : (int.tryParse(json['tahun']?.toString() ?? '2023') ?? 2023),
+      njkb: (json['njkb'] ?? json['harga_jual'] ?? json['nilai_jual'] ?? 0.0).toDouble(),
+      pkbRataRata: (json['pkb_rata_rata'] ?? json['pkbRataRata'] ?? json['pkb'] ?? 0.0).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'jenis_kendaraan': jenisKendaraan,
+      'merk': merk,
+      'model': model,
+      'tipe': tipe,
+      'tahun': tahun,
+      'njkb': njkb,
+      'pkb_rata_rata': pkbRataRata,
+    };
+  }
+}

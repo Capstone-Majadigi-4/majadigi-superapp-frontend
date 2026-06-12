@@ -302,7 +302,6 @@ class _DestinationDetailModalState extends State<DestinationDetailModal> {
                             selectedTime,
                           );
                           if (success && mounted) {
-                            Navigator.pop(context); // close modal
                             _showSuccessDialog(context, selectedDestination!.title, quantity);
                           } else if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -347,7 +346,7 @@ class _DestinationDetailModalState extends State<DestinationDetailModal> {
   void _showSuccessDialog(BuildContext context, String title, int qty) {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           content: Column(
@@ -390,9 +389,10 @@ class _DestinationDetailModalState extends State<DestinationDetailModal> {
                 height: 44,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context); // close dialog
-                    Navigator.push(
-                      context,
+                    final navigator = Navigator.of(dialogContext);
+                    navigator.pop(); // close dialog
+                    Navigator.of(context).pop(); // close modal
+                    navigator.push(
                       MaterialPageRoute(builder: (context) => const MyItineraryScreen()),
                     );
                   },

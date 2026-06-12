@@ -45,16 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          // Back Button
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ),
+
 
           // Main Content
           SafeArea(
@@ -297,10 +288,18 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-        ],
-      ),
-    );
+          // Back Button
+          SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
   }
 }
-
-
