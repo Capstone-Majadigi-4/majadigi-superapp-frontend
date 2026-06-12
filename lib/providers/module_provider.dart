@@ -15,7 +15,10 @@ import 'package:majadigi_superapp_frontend/screens/emergency_numbers_screen.dart
 import 'package:majadigi_superapp_frontend/screens/sapabansos_screen.dart';
 
 class ModuleProvider extends ChangeNotifier {
-  static const String _prefKey = 'installed_modules';
+  String? _currentNik;
+  
+  String get _prefKey => _currentNik != null ? 'installed_modules_$_currentNik' : 'installed_modules';
+  
   SharedPreferences? _prefs;
 
   List<String> _installedModuleIds = [];
@@ -174,7 +177,7 @@ class ModuleProvider extends ChangeNotifier {
     ),
   ];
 
-  static const String _favPrefKey = 'favorite_modules';
+  String get _favPrefKey => _currentNik != null ? 'favorite_modules_$_currentNik' : 'favorite_modules';
 
   List<String> _favoriteModuleIds = [];
 
@@ -197,6 +200,34 @@ class ModuleProvider extends ChangeNotifier {
   Future<void> _initPrefs() async {
     _prefs = await SharedPreferences.getInstance();
     
+    // Read logged in NIK
+    _currentNik = _prefs?.getString('logged_in_nik');
+    
+    // If user is logged in, but their user-specific settings don't exist yet,
+    // check if there are global settings from onboarding to migrate.
+    if (_currentNik != null) {
+      final hasUserInstalled = _prefs?.containsKey('installed_modules_$_currentNik') ?? false;
+      if (!hasUserInstalled) {
+        List<String>? globalInstalled = _prefs?.getStringList('installed_modules');
+        List<String>? globalFavs = _prefs?.getStringList('favorite_modules');
+        
+        if (globalInstalled != null || globalFavs != null) {
+          _installedModuleIds = globalInstalled ?? ['emergency'];
+          _favoriteModuleIds = globalFavs ?? ['emergency'];
+          
+          await _prefs?.setStringList('installed_modules_$_currentNik', _installedModuleIds);
+          await _prefs?.setStringList('favorite_modules_$_currentNik', _favoriteModuleIds);
+          
+          // Clear global settings so we don't migrate them again next time
+          await _prefs?.remove('installed_modules');
+          await _prefs?.remove('favorite_modules');
+          
+          notifyListeners();
+          return;
+        }
+      }
+    }
+
     // Load installed modules
     List<String>? savedInstalled = _prefs?.getStringList(_prefKey);
     if (savedInstalled != null) {

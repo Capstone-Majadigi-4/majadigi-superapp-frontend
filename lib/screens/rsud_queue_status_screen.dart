@@ -197,6 +197,20 @@ class _RsudQueueStatusScreenState extends State<RsudQueueStatusScreen> {
 
       _queueSubscription = _wsService.queueStream.listen((data) {
         if (mounted) {
+          final isSimulated = data['isSimulated'] ?? false;
+          if (isSimulated) {
+            // WebSocket is offline and using simulated fallback.
+            // Let's run our smart, ticket-based simulation instead of general hardcoded ones!
+            if (_simulativeTimer == null) {
+              _startSimulativeTimer(nomorAntrean);
+            }
+            return;
+          }
+
+          // If we receive real live data, cancel the local simulative timer
+          _simulativeTimer?.cancel();
+          _simulativeTimer = null;
+
           final wsServing = data['currentServing']?.toString() ?? '-';
           final wsWaiting = data['waitingCount'] is int ? data['waitingCount'] as int : 0;
 

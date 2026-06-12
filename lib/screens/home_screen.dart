@@ -15,6 +15,7 @@ import 'package:majadigi_superapp_frontend/providers/module_provider.dart';
 import 'package:majadigi_superapp_frontend/providers/auth_provider.dart';
 import 'package:majadigi_superapp_frontend/providers/dashboard_provider.dart';
 import 'package:majadigi_superapp_frontend/providers/darurat_provider.dart';
+import 'package:majadigi_superapp_frontend/providers/bapenda_provider.dart';
 import 'package:majadigi_superapp_frontend/models/service_module.dart';
 import 'package:majadigi_superapp_frontend/screens/module_center_screen.dart';
 import 'package:majadigi_superapp_frontend/screens/module_welcome_screen.dart';
@@ -49,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<DashboardProvider>().fetchBapokTicker();
       context.read<AuthProvider>().fetchUserProfile();
       context.read<ModuleProvider>().reload();
+      context.read<BapendaProvider>().fetchVehicles();
     });
 
     // Auto-play timer for sliding banner
@@ -2061,88 +2063,93 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSmartNotification() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Tax Warning
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2), 
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFECACA)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
+    return Consumer<BapendaProvider>(
+      builder: (context, bapendaProvider, _) {
+        final hasWarningVehicle = bapendaProvider.vehicles.any((v) => v.isWarning);
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Tax Warning
+            if (hasWarningVehicle) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFFFEF2F2), 
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFFECACA)),
                   ),
-                  child: const Icon(Icons.warning_rounded, color: Color(0xFFEF4444)),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Jatuh Tempo Pajak',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF991B1B),
-                          fontSize: 14,
-                          fontFamily: 'Inter',
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.warning_rounded, color: Color(0xFFEF4444)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Jatuh Tempo Pajak',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF991B1B),
+                                fontSize: 14,
+                                fontFamily: 'Inter',
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Pajak PBB Anda (NOP: 3573...) akan jatuh tempo dalam 3 hari. Segera lakukan pembayaran.',
+                              style: TextStyle(
+                                color: Color(0xFF7F1D1D),
+                                fontSize: 12,
+                                height: 1.4,
+                                fontFamily: 'Inter',
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Arahkan langsung ke Bapenda Screen
+                                Navigator.push(context, MaterialPageRoute(builder: (_) => const BapendaScreen()));
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFEF4444),
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 36),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text('Bayar Sekarang', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Pajak PBB Anda (NOP: 3573...) akan jatuh tempo dalam 3 hari. Segera lakukan pembayaran.',
-                        style: TextStyle(
-                          color: Color(0xFF7F1D1D),
-                          fontSize: 12,
-                          height: 1.4,
-                          fontFamily: 'Inter',
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Arahkan langsung ke Bapenda Screen
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const BapendaScreen()));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444),
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 36),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text('Bayar Sekarang', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {}, // Close alert placeholder
+                        child: const Icon(Icons.close, size: 16, color: Color(0xFF991B1B)),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () {}, // Close alert placeholder
-                  child: const Icon(Icons.close, size: 16, color: Color(0xFF991B1B)),
-                ),
-              ],
-            ),
-          ),
-        ),
-        
-        const SizedBox(height: 16),
-        
-        // Bapok Ticker Smart Widget (Fase 2)
-        Consumer<DashboardProvider>(
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            // Bapok Ticker Smart Widget (Fase 2)
+            Consumer<DashboardProvider>(
           builder: (context, provider, _) {
             if (provider.isLoading) {
               return Padding(
@@ -2297,7 +2304,9 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -2593,17 +2602,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       children: [
-                        _buildNotificationCard(
-                          title: 'Jatuh Tempo Pajak',
-                          message: 'Pajak PBB Anda (NOP: 3573...) akan jatuh tempo dalam 3 hari. Segera lakukan pembayaran.',
-                          time: '3 menit yang lalu',
-                          icon: Icons.warning_rounded,
-                          iconColor: const Color(0xFFEF4444),
-                          bgColor: const Color(0xFFFEF2F2),
-                          borderColor: const Color(0xFFFECACA),
-                          isUnread: _hasNotificationBadge,
+                        Consumer<BapendaProvider>(
+                          builder: (context, bapendaProvider, _) {
+                            final hasWarningVehicle = bapendaProvider.vehicles.any((v) => v.isWarning);
+                            if (!hasWarningVehicle) return const SizedBox.shrink();
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildNotificationCard(
+                                  title: 'Jatuh Tempo Pajak',
+                                  message: 'Pajak PBB Anda (NOP: 3573...) akan jatuh tempo dalam 3 hari. Segera lakukan pembayaran.',
+                                  time: '3 menit yang lalu',
+                                  icon: Icons.warning_rounded,
+                                  iconColor: const Color(0xFFEF4444),
+                                  bgColor: const Color(0xFFFEF2F2),
+                                  borderColor: const Color(0xFFFECACA),
+                                  isUnread: _hasNotificationBadge,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                            );
+                          },
                         ),
-                        const SizedBox(height: 12),
                         _buildNotificationCard(
                           title: 'Antrean RSUD Dr Saiful Anwar',
                           message: 'Poli Anak - Nomor Antrean A-001. Silakan bersiap menuju ruang periksa.',

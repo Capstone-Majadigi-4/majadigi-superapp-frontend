@@ -11,6 +11,10 @@ class RsudSaifulAnwarScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Clear Flutter image cache to force fresh load of the replaced image asset
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+
     return Scaffold(
       backgroundColor: const Color(0xFF0046B2),
       body: Stack(

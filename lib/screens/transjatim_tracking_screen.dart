@@ -1347,16 +1347,16 @@ class _TransjatimTrackingScreenState extends State<TransjatimTrackingScreen> wit
 
   Widget _buildActionIcon(IconData icon, Color bgColor, Color iconColor, VoidCallback onTap) {
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
+      child: Material(
+        color: bgColor,
         borderRadius: BorderRadius.circular(10),
-        child: Container(
-          height: 36,
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            height: 36,
+            child: Icon(icon, color: iconColor, size: 20),
           ),
-          child: Icon(icon, color: iconColor, size: 20),
         ),
       ),
     );
